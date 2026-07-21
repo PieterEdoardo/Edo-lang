@@ -15,11 +15,11 @@ private:
     int line = 1;
     int column = 1;
 
-    char peek(); const;
+    char peek() const;
     char advance();
     bool isAtEnd() const;
 
     Token lexNumber();
     Token lexIdentifierOrKeyword();
-    Token madeToken(TokenType type, const std::strings& lexeme) const;
+    Token makeToken(TokenType type, const std::string& lexeme) const;
 };

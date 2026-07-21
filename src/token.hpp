@@ -16,10 +16,14 @@ enum class TokenType {
     RParen,
     LBrace,
     RBrace,
+    LBracket,
+    RBracket,
     Semicolon,
     Equals,
     Plus,
     Minus,
+    Star,
+    Slash,
 
     // End of stream
     EndOfFile,
