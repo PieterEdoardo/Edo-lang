@@ -21,5 +21,5 @@ private:
 
     Token lexNumber();
     Token lexIdentifierOrKeyword();
-    Token makeToken(TokenType type, const std::string& lexeme) const;
+    static Token makeToken(TokenType type, const std::string& lexeme, int tokenLine, int tokenColumn);
 };

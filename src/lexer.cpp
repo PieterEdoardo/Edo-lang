@@ -52,18 +52,16 @@ std::vector<Token> Lexer::tokenize() {
         advance();
 
         switch (c) {
-            case '(': tokens.push_back(makeToken(TokenType::LParen, "(")); break;
-            case ')': tokens.push_back(makeToken(TokenType::RParen, ")")); break;
-            case '{': tokens.push_back(makeToken(TokenType::LBrace, "{")); break;
-            case '}': tokens.push_back(makeToken(TokenType::RBrace, "}")); break;
-            case '[': tokens.push_back(makeToken(TokenType::LBracket, "[")); break;
-            case ']': tokens.push_back(makeToken(TokenType::RBracket, "]")); break;
-            case ';': tokens.push_back(makeToken(TokenType::Semicolon, ";")); break;
-            case '=': tokens.push_back(makeToken(TokenType::Equals, "=")); break;
-            case '+': tokens.push_back(makeToken(TokenType::Plus, "+")); break;
-            case '-': tokens.push_back(makeToken(TokenType::Minus, "-")); break;
-            case '*': tokens.push_back(makeToken(TokenType::Star, "*")); break;
-            case '\\': tokens.push_back(makeToken(TokenType::Slash, "\\")); break;
+            case '(': tokens.push_back(makeToken(TokenType::LParen, "(", startLine, startColumn)); break;
+            case ')': tokens.push_back(makeToken(TokenType::RParen, ")", startLine, startColumn)); break;
+            case '{': tokens.push_back(makeToken(TokenType::LBrace, "{", startLine, startColumn)); break;
+            case '}': tokens.push_back(makeToken(TokenType::RBrace, "}", startLine, startColumn)); break;
+            case ';': tokens.push_back(makeToken(TokenType::Semicolon, ";", startLine, startColumn)); break;
+            case '=': tokens.push_back(makeToken(TokenType::Equals, "=", startLine, startColumn)); break;
+            case '+': tokens.push_back(makeToken(TokenType::Plus, "+", startLine, startColumn)); break;
+            case '-': tokens.push_back(makeToken(TokenType::Minus, "-", startLine, startColumn)); break;
+            case '*': tokens.push_back(makeToken(TokenType::Star, "*", startLine, startColumn)); break;
+            case '\\': tokens.push_back(makeToken(TokenType::Slash, "\\", startLine, startColumn)); break;
             default: {
                 Token invalid{TokenType::Invalid, std::string(1, c), startLine, startColumn};
                 tokens.push_back(invalid);
@@ -75,8 +73,8 @@ std::vector<Token> Lexer::tokenize() {
     return tokens;
 }
 
-Token Lexer::makeToken(TokenType type, const std::string& lexeme) const {
-    return Token{type, lexeme, line, column};
+Token Lexer::makeToken(TokenType type, const std::string& lexeme, int tokenLine, int tokenColumn) {
+    return Token{type, lexeme, tokenLine, tokenColumn};
 }
 
 Token Lexer::lexNumber() {
