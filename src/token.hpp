@@ -10,6 +10,11 @@ enum class TokenType {
     KwSyscall,
     KwIf,
     KwWhile,
+    KwElse,
+    KwFor,
+    KwReturn,
+    KwBreak,
+    KwContinue,
 
     // Punctuation
     LParen,

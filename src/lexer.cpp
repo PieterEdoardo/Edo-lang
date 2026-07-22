@@ -92,3 +92,33 @@ Token Lexer::lexNumber() {
 
     return Token{TokenType::Number, lexeme, startLine, startColumn};
 }
+
+Token Lexer::lexIdentifierOrKeyword() {
+    int startLine = line;
+    int startColumn = column;
+    size_t start = position;
+
+    while (!isAtEnd() && (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_')) {
+        advance();
+    }
+
+    std::string lexeme = source.substr(start, position - start);
+
+    static const std::unordered_map<std::string, TokenType> keywords = {
+        {"if", TokenType::KwIf},
+        {"else", TokenType::KwElse},
+        {"for", TokenType::KwFor},
+        {"while", TokenType::KwWhile},
+        {"syscall", TokenType::KwWhile},
+        {"return", TokenType::KwReturn},
+        {"break", TokenType::KwBreak},
+        {"continue", TokenType::KwContinue},
+    };
+
+    auto it = keywords.find(lexeme);
+    if (it != keywords.end()) {
+        return Token{it->second, lexeme, startLine, startColumn};
+    }
+
+    return Token{TokenType::Identifier, lexeme, startLine, startColumn};
+}
