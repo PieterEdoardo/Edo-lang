@@ -24,11 +24,16 @@ enum class TokenType {
     LBracket,
     RBracket,
     Semicolon,
+    Colon,
     Equals,
     Plus,
     Minus,
     Star,
-    Slash,
+    BSlash,
+    FSlash,
+    Modulo,
+    DQuote,
+    SQuote,
 
     // End of stream
     EndOfFile,
