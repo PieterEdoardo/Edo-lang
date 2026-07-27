@@ -33,45 +33,6 @@ const Token & Parser::expect(TokenType type, const std::string &message) {
     throw std::runtime_error(message);
 }
 
-ExpressionPointer Parser::parsePrimary() {
-    const Token& token = peek();
-
-    // Character groups
-    if (check(TokenType::Number)) {
-        advance();
-        int value = std::stoi(token.lexeme);
-        return std::make_unique<Expression>(NumberExpression{value});
-    }
-
-    if (check(TokenType::Identifier)) {
-        advance();
-        return std::make_unique<Expression>(IdentifierExpression{token.lexeme});
-    }
-
-    // Character specific
-    if (check(TokenType::LParen)) {
-        advance();
-        ExpressionPointer inner = parseExpression();
-
-        if (!check(TokenType::RParen)) {
-            const Token& badToken = peek();
-            throw std::runtime_error(
-                "Parse error at line " + std::to_string(badToken.line) +
-                ", column " + std::to_string(badToken.column) +
-                ": expected ')' after expression"
-            );
-        }
-        advance();
-
-        return inner;
-    }
-
-    throw std::runtime_error(
-        "Parse error at line " + std::to_string(token.line) +
-        ", column " + std::to_string(token.column) +
-        ": expected expression, got \"" + token.lexeme + "\""
-    );
-}
 
 StatementPointer Parser::parseStatement() {
     if (check(TokenType::KwSyscall)) {
@@ -111,6 +72,62 @@ StatementPointer Parser::parseStatement() {
     }
 
     return parseAssignmentStatement();
+}
+
+StatementPointer Parser::parseAssignmentStatement() {
+    const Token& token = expect(TokenType::Identifier, "Expected identifier at start of assignment statement.");
+
+    expect(TokenType::Equals, "Expected '=' after identifier in assignment statement.");
+
+    ExpressionPointer value = parseExpression();
+
+    expect(TokenType::Semicolon, "Expected ';' after assignment statement.");
+
+    AssignmentStatement assignment;
+    assignment.target = token.lexeme;
+    assignment.value = std::move(value);
+
+    return std::make_unique<Statement>(std::move(assignment));
+}
+
+ExpressionPointer Parser::parsePrimary() {
+    const Token& token = peek();
+
+    // Character groups
+    if (check(TokenType::Number)) {
+        advance();
+        int value = std::stoi(token.lexeme);
+        return std::make_unique<Expression>(NumberExpression{value});
+    }
+
+    if (check(TokenType::Identifier)) {
+        advance();
+        return std::make_unique<Expression>(IdentifierExpression{token.lexeme});
+    }
+
+    // Character specific
+    if (check(TokenType::LParen)) {
+        advance();
+        ExpressionPointer inner = parseExpression();
+
+        if (!check(TokenType::RParen)) {
+            const Token& badToken = peek();
+            throw std::runtime_error(
+                "Parse error at line " + std::to_string(badToken.line) +
+                ", column " + std::to_string(badToken.column) +
+                ": expected ')' after expression"
+            );
+        }
+        advance();
+
+        return inner;
+    }
+
+    throw std::runtime_error(
+        "Parse error at line " + std::to_string(token.line) +
+        ", column " + std::to_string(token.column) +
+        ": expected expression, got \"" + token.lexeme + "\""
+    );
 }
 
 ExpressionPointer Parser::parseExpression() {
