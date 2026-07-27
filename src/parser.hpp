@@ -15,8 +15,25 @@ private:
     const Token& peek() const;
     const Token& advance();
     bool check(TokenType type) const;
+    const Token& expect(TokenType type, const std::string& message);
     bool isAtEnd() const;
 
     ExpressionPointer parsePrimary();
+
+
+    StatementPointer parseStatement();
+
     ExpressionPointer parseAdditive();
+
+    StatementPointer parseAssignmentStatement();
+    StatementPointer parseBlockStatement();
+
+    StatementPointer parseSyscallStatement();
+    StatementPointer parseIfStatement();
+    StatementPointer parseElseStatement();
+    StatementPointer parseWhileStatement();
+    StatementPointer parseForStatement();
+    StatementPointer parseBreakStatement();
+    StatementPointer parseContinueStatement();
+    StatementPointer parseReturnStatement();
 };

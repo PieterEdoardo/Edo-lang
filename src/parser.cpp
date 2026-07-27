@@ -25,6 +25,14 @@ bool Parser::check(TokenType type) const {
     return peek().type == type;
 }
 
+const Token & Parser::expect(TokenType type, const std::string &message) {
+    if (check(type)) {
+        return advance();
+    }
+
+    throw std::runtime_error(message);
+}
+
 ExpressionPointer Parser::parsePrimary() {
     const Token& token = peek();
 
@@ -63,6 +71,46 @@ ExpressionPointer Parser::parsePrimary() {
         ", column " + std::to_string(token.column) +
         ": expected expression, got \"" + token.lexeme + "\""
     );
+}
+
+StatementPointer Parser::parseStatement() {
+    if (check(TokenType::KwSyscall)) {
+        return parseSyscallStatement();
+    }
+
+    if (check(TokenType::KwIf)) {
+        return parseIfStatement();
+    }
+
+    if (check(TokenType::KwElse)) {
+        return parseElseStatement();
+    }
+
+    if (check(TokenType::KwWhile)) {
+        return parseWhileStatement();
+    }
+
+    if (check(TokenType::KwFor)) {
+        return parseForStatement();
+    }
+
+    if (check(TokenType::KwBreak)) {
+        return parseBreakStatement();
+    }
+
+    if (check(TokenType::KwContinue)) {
+        return parseContinueStatement();
+    }
+
+    if (check(TokenType::KwReturn)) {
+        return parseReturnStatement();
+    }
+
+    if (check(TokenType::LBrace)) {
+        return parseBlockStatement();
+    }
+
+    return parseAssignmentStatement();
 }
 
 ExpressionPointer Parser::parseExpression() {
