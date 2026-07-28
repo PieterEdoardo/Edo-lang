@@ -25,12 +25,17 @@ bool Parser::check(TokenType type) const {
     return peek().type == type;
 }
 
-const Token & Parser::expect(TokenType type, const std::string &message) {
+const Token & Parser::expect(TokenType type, const std::string& expected) {
     if (check(type)) {
         return advance();
     }
 
-    throw std::runtime_error(message);
+    const Token& token = peek();
+    throw std::runtime_error(
+        "Parse error at line " + std::to_string(token.line) +
+        ", column " + std::to_string(token.column) +
+        ": expected '" + expected + ", got \"" + token.lexeme + "\""
+    );
 }
 
 
@@ -75,7 +80,8 @@ StatementPointer Parser::parseStatement() {
 }
 
 StatementPointer Parser::parseAssignmentStatement() {
-    const Token& token = expect(TokenType::Identifier, "Expected identifier at start of assignment statement.");
+    const Token& targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
+    const std::string targetName = targetToken.lexeme;
 
     expect(TokenType::Equals, "Expected '=' after identifier in assignment statement.");
 
@@ -83,12 +89,36 @@ StatementPointer Parser::parseAssignmentStatement() {
 
     expect(TokenType::Semicolon, "Expected ';' after assignment statement.");
 
-    AssignmentStatement assignment;
-    assignment.target = token.lexeme;
-    assignment.value = std::move(value);
-
-    return std::make_unique<Statement>(std::move(assignment));
+    return std::make_unique<Statement>(AssignmentStatement{targetName, std::move(value)});
 }
+
+StatementPointer Parser::parseBlockStatement() {
+    expect(TokenType::LBrace, "Expected '{' after block statement.");
+
+    std::vector<StatementPointer> statements;
+
+    while (!check(TokenType::RBrace) && !isAtEnd()) {
+        statements.push_back(parseStatement());
+    }
+
+    expect(TokenType::RBrace, "Expected '}' at end of block statement.");
+
+    return std::make_unique<Statement>(BlockStatement{std::move(statements)});
+}
+
+StatementPointer Parser::parseIfStatement() {
+    expect(TokenType::KwIf, "Expected 'if'.");
+    expect(TokenType::LParen, "Expected '('.");
+
+    const Token& targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
+
+
+    expect(TokenType::RParen, "Expected ')'.");
+
+    parseBlockStatement();
+}
+
+
 
 ExpressionPointer Parser::parsePrimary() {
     const Token& token = peek();

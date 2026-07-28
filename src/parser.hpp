@@ -19,15 +19,13 @@ private:
     bool isAtEnd() const;
 
     ExpressionPointer parsePrimary();
-
-
     StatementPointer parseStatement();
 
-    ExpressionPointer parseAdditive();
-
+    // Grouped logic
     StatementPointer parseAssignmentStatement();
     StatementPointer parseBlockStatement();
 
+    // Statements
     StatementPointer parseSyscallStatement();
     StatementPointer parseIfStatement();
     StatementPointer parseElseStatement();
@@ -36,4 +34,7 @@ private:
     StatementPointer parseBreakStatement();
     StatementPointer parseContinueStatement();
     StatementPointer parseReturnStatement();
+
+    // Operators
+    ExpressionPointer parseAdditive();
 };
