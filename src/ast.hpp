@@ -7,12 +7,23 @@
 struct NumberExpression;
 struct IdentifierExpression;
 struct BinaryExpression;
+struct UnaryExpression;
+struct AssignmentStatement;
+struct BlockStatement;
+struct IfStatement;
 
-using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression>;
+using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression, UnaryExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
+using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement>;
+using StatementPointer = std::unique_ptr<Statement>;
 
 struct NumberExpression {
     int value;
+};
+
+struct UnaryExpression {
+    std::string operatorSymbol;
+    ExpressionPointer operand;
 };
 
 struct IdentifierExpression {
@@ -24,13 +35,6 @@ struct BinaryExpression {
     std::string operatorSymbol;
     ExpressionPointer right;
 };
-
-struct AssignmentStatement;
-struct BlockStatement;
-struct IfStatement;
-
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement>;
-using StatementPointer = std::unique_ptr<Statement>;
 
 struct AssignmentStatement {
     std::string target;
@@ -44,4 +48,5 @@ struct BlockStatement {
 struct IfStatement {
     ExpressionPointer condition;
     std::unique_ptr<BlockStatement> thenBranch;
+    std::unique_ptr<BlockStatement> elseBranch;
 };

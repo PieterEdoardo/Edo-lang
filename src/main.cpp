@@ -31,52 +31,16 @@ static std::string tokenTypeToString(TokenType type) {
         default:                        return "Unknown";
     }
 }
-void printExpression(const Expression& expression) {
-    std::visit(
-        []<typename T0>(const T0& node) {
-            using NodeType = std::decay_t<T0>;
-
-            if constexpr (std::is_same_v<NodeType, NumberExpression>) {
-                std::cout << node.value;
-            } else if constexpr (std::is_same_v<NodeType, IdentifierExpression>) {
-                std::cout << node.name;
-            } else if constexpr (std::is_same_v<NodeType, BinaryExpression>) {
-                std::cout << "(";
-                printExpression(*node.left);
-                std::cout << " " << node.operatorSymbol << " ";
-                printExpression(*node.right);
-                std::cout << ")";
-            }
-        },
-        expression
-    );
-}
 
 int main() {
-    std::string source = "1 + 2 - 3";
+    std:: string source = "rax = 5; if (rax) { rbx = rax + 1; }";
 
     Lexer lexer(source);
     std::vector<Token> tokens = lexer.tokenize();
 
-    Parser parser(tokens);
-    ExpressionPointer expression = parser.parseExpression();
-
-    printExpression(*expression);
-    std::cout << "\n";
+    for (const Token& token : tokens) {
+        std::cout << "[" << token.line << "." << token.column << "] " << tokenTypeToString(token.type) << " \"" << token.lexeme << "\"\n";
+    }
 
     return 0;
 }
-
-
-// int main() {
-//     std:: string source = "rax = 5; \nif (rax) { rbx = rax + 1; } \nx = \"%*-+'/\\\";";
-//
-//     Lexer lexer(source);
-//     std::vector<Token> tokens = lexer.tokenize();
-//
-//     for (const Token& token : tokens) {
-//         std::cout << "[" << token.line << "." << token.column << "] " << tokenTypeToString(token.type) << " \"" << token.lexeme << "\"\n";
-//     }
-//
-//     return 0;
-// }

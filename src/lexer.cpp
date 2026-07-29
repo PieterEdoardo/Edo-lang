@@ -14,35 +14,35 @@ char Lexer::peek() const {
 }
 
 char Lexer::advance() {
-    char c = source[position++];
+    char character = source[position++];
 
-    if (c == '\n') {
+    if (character == '\n') {
         line++;
         column = 1;
     } else {
         column++;
     }
 
-    return c;
+    return character;
 }
 
 std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
 
     while (!isAtEnd()) {
-        char c = peek();
+        char character = peek();
 
-        if (std::isspace(static_cast<unsigned char>(c))) {
+        if (std::isspace(static_cast<unsigned char>(character))) {
             advance();
             continue;
         }
 
-        if (std::isdigit(static_cast<unsigned char>(c))) {
+        if (std::isdigit(static_cast<unsigned char>(character))) {
             tokens.push_back(lexNumber());
             continue;
         }
 
-        if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
+        if (std::isalpha(static_cast<unsigned char>(character)) || character == '_') {
             tokens.push_back(lexIdentifierOrKeyword());
             continue;
         }
@@ -51,13 +51,12 @@ std::vector<Token> Lexer::tokenize() {
         int startColumn = column;
         advance();
 
-        switch (c) {
+        switch (character) {
             case '(': tokens.push_back(makeToken(TokenType::LParen, "(", startLine, startColumn)); break;
             case ')': tokens.push_back(makeToken(TokenType::RParen, ")", startLine, startColumn)); break;
             case '{': tokens.push_back(makeToken(TokenType::LBrace, "{", startLine, startColumn)); break;
             case '}': tokens.push_back(makeToken(TokenType::RBrace, "}", startLine, startColumn)); break;
             case ';': tokens.push_back(makeToken(TokenType::Semicolon, ";", startLine, startColumn)); break;
-            case '=': tokens.push_back(makeToken(TokenType::Equals, "=", startLine, startColumn)); break;
             case '+': tokens.push_back(makeToken(TokenType::Plus, "+", startLine, startColumn)); break;
             case '-': tokens.push_back(makeToken(TokenType::Minus, "-", startLine, startColumn)); break;
             case '*': tokens.push_back(makeToken(TokenType::Star, "*", startLine, startColumn)); break;
@@ -66,8 +65,44 @@ std::vector<Token> Lexer::tokenize() {
             case '/': tokens.push_back(makeToken(TokenType::FSlash, "/", startLine, startColumn)); break;
             case '"': tokens.push_back(makeToken(TokenType::DQuote, "\"", startLine, startColumn)); break;
             case '\'': tokens.push_back(makeToken(TokenType::SQuote, "'", startLine, startColumn)); break;
+            case '=': {
+                if (peek() == '=') {
+                    advance();
+                    tokens.push_back(makeToken(TokenType::EqualEqual, "==", startLine, startColumn));
+                } else {
+                    tokens.push_back(makeToken(TokenType::Equals, "=", startLine, startColumn));
+                }
+                break;
+            }
+            case '!': {
+                if (peek() == '=') {
+                    advance();
+                    tokens.push_back(makeToken(TokenType::NotEqual, "!=", startLine, startColumn));
+                } else {
+                    tokens.push_back(makeToken(TokenType::Not, "!", startLine, startColumn));
+                }
+                break;
+            }
+            case '<': {
+                if (peek() == '=') {
+                    advance();
+                    tokens.push_back(makeToken(TokenType::LesserEqual, "<=", startLine, startColumn));
+                } else {
+                    tokens.push_back(makeToken(TokenType::Lesser, "<", startLine, startColumn));
+                }
+                break;
+            }
+            case '>': {
+                if (peek() == '=') {
+                    advance();
+                    tokens.push_back(makeToken(TokenType::GreaterEqual, ">=", startLine, startColumn));
+                } else {
+                    tokens.push_back(makeToken(TokenType::Greater, ">", startLine, startColumn));
+                }
+                break;
+            }
             default: {
-                Token invalid{TokenType::Invalid, std::string(1, c), startLine, startColumn};
+                Token invalid{TokenType::Invalid, std::string(1, character), startLine, startColumn};
                 tokens.push_back(invalid);
             }
         }
@@ -111,7 +146,7 @@ Token Lexer::lexIdentifierOrKeyword() {
         {"else", TokenType::KwElse},
         {"for", TokenType::KwFor},
         {"while", TokenType::KwWhile},
-        {"syscall", TokenType::KwWhile},
+        {"syscall", TokenType::KwSyscall},
         {"return", TokenType::KwReturn},
         {"break", TokenType::KwBreak},
         {"continue", TokenType::KwContinue},

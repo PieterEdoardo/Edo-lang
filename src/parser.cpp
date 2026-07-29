@@ -1,7 +1,12 @@
 #include "parser.hpp"
+#include <memory>
 #include <stdexcept>
 
 Parser::Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
+
+ExpressionPointer Parser::parseExpression() {
+    return parseComparison();
+}
 
 bool Parser::isAtEnd() const {
     return peek().type == TokenType::EndOfFile;
@@ -40,37 +45,33 @@ const Token & Parser::expect(TokenType type, const std::string& expected) {
 
 
 StatementPointer Parser::parseStatement() {
-    if (check(TokenType::KwSyscall)) {
-        return parseSyscallStatement();
-    }
+    // if (check(TokenType::KwSyscall)) {
+    //     return parseSyscallStatement();
+    // }
 
     if (check(TokenType::KwIf)) {
         return parseIfStatement();
     }
 
-    if (check(TokenType::KwElse)) {
-        return parseElseStatement();
-    }
+    // if (check(TokenType::KwWhile)) {
+    //     return parseWhileStatement();
+    // }
 
-    if (check(TokenType::KwWhile)) {
-        return parseWhileStatement();
-    }
+    // if (check(TokenType::KwFor)) {
+    //     return parseForStatement();
+    // }
 
-    if (check(TokenType::KwFor)) {
-        return parseForStatement();
-    }
+    // if (check(TokenType::KwBreak)) {
+    //     return parseBreakStatement();
+    // }
 
-    if (check(TokenType::KwBreak)) {
-        return parseBreakStatement();
-    }
+    // if (check(TokenType::KwContinue)) {
+    //     return parseContinueStatement();
+    // }
 
-    if (check(TokenType::KwContinue)) {
-        return parseContinueStatement();
-    }
-
-    if (check(TokenType::KwReturn)) {
-        return parseReturnStatement();
-    }
+    // if (check(TokenType::KwReturn)) {
+    //     return parseReturnStatement();
+    // }
 
     if (check(TokenType::LBrace)) {
         return parseBlockStatement();
@@ -79,6 +80,7 @@ StatementPointer Parser::parseStatement() {
     return parseAssignmentStatement();
 }
 
+// Grouped logic
 StatementPointer Parser::parseAssignmentStatement() {
     const Token& targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
     const std::string targetName = targetToken.lexeme;
@@ -106,19 +108,49 @@ StatementPointer Parser::parseBlockStatement() {
     return std::make_unique<Statement>(BlockStatement{std::move(statements)});
 }
 
-StatementPointer Parser::parseIfStatement() {
-    expect(TokenType::KwIf, "Expected 'if'.");
-    expect(TokenType::LParen, "Expected '('.");
+ExpressionPointer Parser::parseComparison() {
+    ExpressionPointer left = parseAdditive();
 
-    const Token& targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
+    if (check(TokenType::EqualEqual) || check(TokenType::NotEqual) ||
+        check(TokenType::Lesser) || check(TokenType::Greater) ||
+        check(TokenType::LesserEqual) || check(TokenType::GreaterEqual)) {
 
+        const Token& operatorToken = advance();
+        ExpressionPointer right = parseAdditive();
 
-    expect(TokenType::RParen, "Expected ')'.");
+        return std::make_unique<Expression>(BinaryExpression{std::move(left), operatorToken.lexeme, std::move(right)});
+    }
 
-    parseBlockStatement();
+    return left;
 }
 
+// Statements
+StatementPointer Parser::parseIfStatement() {
+    expect(TokenType::KwIf, "'if' at start of if statement");
+    expect(TokenType::LParen, "'(' after 'if'");
 
+    ExpressionPointer condition = parseExpression();
+
+    expect(TokenType::RParen, "')' after if condition");
+
+    const StatementPointer thenStatement = parseBlockStatement();
+    auto thenBranch = std::make_unique<BlockStatement>(
+        std::move(std::get<BlockStatement>(*thenStatement))
+    );
+
+    std::unique_ptr<BlockStatement> elseBranch = nullptr;
+    if (check(TokenType::KwElse)) {
+        advance();
+        const StatementPointer elseStatement = parseBlockStatement();
+        elseBranch = std::make_unique<BlockStatement>(
+            std::move(std::get<BlockStatement>(*elseStatement))
+        );
+    }
+
+    return std::make_unique<Statement>(
+        IfStatement{std::move(condition), std::move(thenBranch), std::move(elseBranch)}
+    );
+}
 
 ExpressionPointer Parser::parsePrimary() {
     const Token& token = peek();
@@ -160,8 +192,18 @@ ExpressionPointer Parser::parsePrimary() {
     );
 }
 
-ExpressionPointer Parser::parseExpression() {
-    return parseAdditive();
+// Operators
+ExpressionPointer Parser::parseUnary() {
+    if (check(TokenType::Not)) {
+        const Token& operatorToken = advance();
+        ExpressionPointer operand = parseUnary();
+
+        return std::make_unique<Expression>(UnaryExpression{
+            operatorToken.lexeme, std::move(operand)
+        });
+    }
+
+    return parsePrimary();
 }
 
 ExpressionPointer Parser::parseAdditive() {

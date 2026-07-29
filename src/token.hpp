@@ -25,6 +25,8 @@ enum class TokenType {
     RBracket,
     Semicolon,
     Colon,
+
+    // Operators
     Equals,
     Plus,
     Minus,
@@ -32,8 +34,21 @@ enum class TokenType {
     BSlash,
     FSlash,
     Modulo,
+    Lesser,
+    Greater,
+
+    // Unary operators
+    Not,
+
+    // Quotes
     DQuote,
     SQuote,
+
+    // Combination types
+    EqualEqual,
+    NotEqual,
+    LesserEqual,
+    GreaterEqual,
 
     // End of stream
     EndOfFile,
