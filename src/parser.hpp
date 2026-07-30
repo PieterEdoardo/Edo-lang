@@ -7,17 +7,13 @@ class Parser {
 public:
     explicit Parser(std::vector<Token> tokens);
 
-    ExpressionPointer parseExpression();
-
-private:
-    std::vector<Token> tokens;
-    size_t position = 0;
     const Token& peek() const;
     const Token& advance();
     bool check(TokenType type) const;
     const Token& expect(TokenType type, const std::string& message);
     bool isAtEnd() const;
 
+    ExpressionPointer parseExpression();
     ExpressionPointer parsePrimary();
 
     // Grouped logic
@@ -39,4 +35,8 @@ private:
     // Expressions
     ExpressionPointer parseUnary();
     ExpressionPointer parseAdditive();
+
+private:
+    std::vector<Token> tokens; // internal
+    size_t position = 0; // internal
 };

@@ -1,11 +1,14 @@
 #include <algorithm>
 #include <iostream>
 #include <string>
+
+#include "ast_printer.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 
 static std::string tokenTypeToString(TokenType type) {
     switch (type) {
+        // Single
         case TokenType::Number:         return "Number";
         case TokenType::Identifier:     return "Identifier";
         case TokenType::KwSyscall:      return "KwSyscall";
@@ -25,6 +28,15 @@ static std::string tokenTypeToString(TokenType type) {
         case TokenType::SQuote:         return "SQuote";
         case TokenType::FSlash:         return "FSlash";
         case TokenType::BSlash:         return "BSlash";
+        case TokenType::Not:            return "Not";
+        case TokenType::Lesser:         return "Lesser";
+        case TokenType::Greater:        return "Greater";
+
+        // Multiple
+        case TokenType::EqualEqual:     return "EqualEqual";
+        case TokenType::NotEqual:       return "NotEqual";
+        case TokenType::LesserEqual:    return "LesserEqual";
+        case TokenType::GreaterEqual:   return "GreaterEqual";
 
         case TokenType::EndOfFile:      return "EndOfFile";
         case TokenType::Invalid:        return "Invalid";
@@ -33,13 +45,16 @@ static std::string tokenTypeToString(TokenType type) {
 }
 
 int main() {
-    std:: string source = "rax = 5; if (rax) { rbx = rax + 1; }";
+    const std::string source = "rax = 5; if (rax == 5) { rbx = rax + 1; }";
 
     Lexer lexer(source);
-    std::vector<Token> tokens = lexer.tokenize();
+    const std::vector<Token> tokens = lexer.tokenize();
 
-    for (const Token& token : tokens) {
-        std::cout << "[" << token.line << "." << token.column << "] " << tokenTypeToString(token.type) << " \"" << token.lexeme << "\"\n";
+    Parser parser(tokens);
+
+    while (!parser.isAtEnd()) {
+        StatementPointer statement = parser.parseStatement();
+        std::cout << printStatement(*statement);
     }
 
     return 0;

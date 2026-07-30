@@ -11,10 +11,11 @@ struct UnaryExpression;
 struct AssignmentStatement;
 struct BlockStatement;
 struct IfStatement;
+struct WhileStatement;
 
 using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression, UnaryExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement>;
+using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement>;
 using StatementPointer = std::unique_ptr<Statement>;
 
 struct NumberExpression {
@@ -49,4 +50,9 @@ struct IfStatement {
     ExpressionPointer condition;
     std::unique_ptr<BlockStatement> thenBranch;
     std::unique_ptr<BlockStatement> elseBranch;
+};
+
+struct WhileStatement {
+    ExpressionPointer condition;
+    std::unique_ptr<BlockStatement> thenBranch;
 };

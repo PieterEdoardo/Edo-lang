@@ -53,9 +53,9 @@ StatementPointer Parser::parseStatement() {
         return parseIfStatement();
     }
 
-    // if (check(TokenType::KwWhile)) {
-    //     return parseWhileStatement();
-    // }
+    if (check(TokenType::KwWhile)) {
+        return parseWhileStatement();
+    }
 
     // if (check(TokenType::KwFor)) {
     //     return parseForStatement();
@@ -118,7 +118,11 @@ ExpressionPointer Parser::parseComparison() {
         const Token& operatorToken = advance();
         ExpressionPointer right = parseAdditive();
 
-        return std::make_unique<Expression>(BinaryExpression{std::move(left), operatorToken.lexeme, std::move(right)});
+        return std::make_unique<Expression>(BinaryExpression{
+            .left = std::move(left),
+            .operatorSymbol = operatorToken.lexeme,
+            .right = std::move(right)
+        });
     }
 
     return left;
@@ -148,8 +152,30 @@ StatementPointer Parser::parseIfStatement() {
     }
 
     return std::make_unique<Statement>(
-        IfStatement{std::move(condition), std::move(thenBranch), std::move(elseBranch)}
+        IfStatement{.condition = std::move(condition),
+        .thenBranch = std::move(thenBranch),
+        .elseBranch = std::move(elseBranch)}
     );
+}
+
+StatementPointer Parser::parseWhileStatement() {
+    expect(TokenType::KwWhile, "'while' at start of while statement");
+    expect(TokenType::LParen, "'(' after 'while'");
+
+    ExpressionPointer condition = parseExpression();
+
+    expect(TokenType::RParen, "')' after while condition");
+
+    const StatementPointer thenStatement = parseBlockStatement();
+    auto thenBranch = std::make_unique<BlockStatement>(
+        std::move(std::get<BlockStatement>(*thenStatement))
+    );
+
+    return std::make_unique<Statement>(
+        WhileStatement{
+        .condition = std::move(condition),
+        .thenBranch = std::move(thenBranch)
+    });
 }
 
 ExpressionPointer Parser::parsePrimary() {
