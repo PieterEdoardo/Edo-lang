@@ -22,7 +22,7 @@ public:
     ExpressionPointer       parseComparison();
 
     // Calls
-    ExpressionPointer       parseParameters();
+    ParameterDefinition     parseParameters();
     StatementPointer        parseFunctionCall();
     StatementPointer        parseMachineCall();
 

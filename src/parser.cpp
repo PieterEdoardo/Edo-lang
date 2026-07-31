@@ -84,7 +84,7 @@ StatementPointer Parser::parseStatement() {
     return parseAssignmentStatement();
 }
 
-ExpressionPointer Parser::parseParameters() {
+ParameterDefinition Parser::parseParameters() {
     expect(TokenType::LParen, "Expected '(' after machine statement identifier");
 
     std::vector<TypeDefinition> typeList;
@@ -98,19 +98,19 @@ ExpressionPointer Parser::parseParameters() {
             .name = typeTarget.lexeme,
             .byteSize = 8
         });
-
         identifierList.emplace_back(typeIdentifierTarget.lexeme);
-
 
         if (check(TokenType::Comma)) {
             advance();
         }
     }
 
-    return std::make_unique<Expression>(ParameterDefinition{
-        .type = std::move(typeList),
-        .identifier = std::move(identifierList)
-    });
+    expect(TokenType::RParen, "')' after final parameter declaration");
+
+    return ParameterDefinition{
+        .types = std::move(typeList),
+        .identifiers = std::move(identifierList)
+    };
 }
 
 // Calls
@@ -118,16 +118,17 @@ StatementPointer Parser::parseMachineCall() {
     expect(TokenType::KwMachine, "'machine' at start of machine statement");
 
     const Token& token = expect(TokenType::Identifier, "identifier after machine statement");
-    const std::string name = token.lexeme;
 
-    const ExpressionPointer parameters = parseParameters();
+    ParameterDefinition parameters = parseParameters();
 
-    const StatementPointer block = parseBlockStatement();
+    const StatementPointer blockStatement = parseBlockStatement();
+    auto block = std::make_unique<BlockStatement>(
+      std::move(std::get<BlockStatement>(*blockStatement))
+    );
 
-
-    return std::make_unique<Call>(MachineCall{
-        .identifier = name,
-        .parameters = parameters,
+    return std::make_unique<Statement>(MachineDefinition{
+        .identifier = token.lexeme,
+        .parameters = std::move(parameters),
         .block = std::move(block)
     });
 }

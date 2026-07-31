@@ -4,7 +4,6 @@
 #include <variant>
 #include <vector>
 
-struct TypeDefinition;
 struct NumberExpression;
 struct IdentifierExpression;
 struct BinaryExpression;
@@ -14,24 +13,18 @@ struct BlockStatement;
 struct IfStatement;
 struct WhileStatement;
 struct ArchMap;
-struct ParameterDefinition;
 struct OpcodeMap;
 struct RegisterMap;
-struct MachineCall;
-struct FunctionCall;
+struct ParameterDefinition;
+struct TypeDefinition;
+struct MachineDefinition;
+struct FunctionDefinition;
 
 using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression, UnaryExpression, ParameterDefinition>;
 using ExpressionPointer = std::unique_ptr<Expression>;
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap>;
+using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap, MachineDefinition, FunctionDefinition>;
 using StatementPointer = std::unique_ptr<Statement>;
-using Call = std::variant<MachineCall, FunctionCall>;
-using CallPointer = std::unique_ptr<Call>;
 
-
-struct TypeDefinition {
-    std::string name;
-    std::size_t byteSize;
-};
 
 struct NumberExpression {
     int value;
@@ -89,18 +82,23 @@ struct ArchMap {
     std::vector<OpcodeMap> opcodes;
 };
 
-struct ParameterDefinition {
-    std::vector<TypeDefinition> type;
-    std::vector<std::string> identifier;
+struct TypeDefinition {
+    std::string name;
+    std::size_t byteSize;
 };
 
-struct MachineCall {
+struct ParameterDefinition {
+    std::vector<TypeDefinition> types;
+    std::vector<std::string> identifiers;
+};
+
+struct MachineDefinition {
     std::string identifier;
     ParameterDefinition parameters;
     std::unique_ptr<BlockStatement> block;
 };
 
-struct FunctionCall {
+struct FunctionDefinition {
     std::string type;
     std::string identifier;
     std::unique_ptr<ParameterDefinition> parameters;
