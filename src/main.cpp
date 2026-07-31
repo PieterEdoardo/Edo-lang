@@ -11,7 +11,7 @@ static std::string tokenTypeToString(TokenType type) {
         // Single
         case TokenType::Number:         return "Number";
         case TokenType::Identifier:     return "Identifier";
-        case TokenType::KwSyscall:      return "KwSyscall";
+        case TokenType::KwMachine:      return "KwSyscall";
         case TokenType::KwIf:           return "KwIf";
         case TokenType::KwWhile:        return "KwWhile";
         case TokenType::LParen:         return "LParen";
@@ -45,7 +45,26 @@ static std::string tokenTypeToString(TokenType type) {
 }
 
 int main() {
-    const std::string source = "rax = 5; if (rax == 5) { rbx = rax + 1; }";
+    const std::string source =
+    // "#include <stdedo>"
+    // "#include <regs_x86_64>"
+    "arch x86_64 { \n"
+        "register rax = registers_86_64_accumulation_64_RAX,\n"
+        "register rdi = registers_86_64_destination_64_RDI,\n"
+        "register rsi = registers_86_64_source_64_RSI,\n"
+        "register rdx = registers_86_64_dataio_64_RDX\n"
+    "}\n\n"
+
+    "machine print(text, size) {\n"
+        "rax = 1;\n"
+        "rdi = 1;\n"
+        "rsi = text;\n"
+        "rdx = size;\n"
+        "syscall();\n"
+    "}\n\n"
+
+    "rax = 5;\n"
+    "print(rax, 1);\n";
 
     Lexer lexer(source);
     const std::vector<Token> tokens = lexer.tokenize();

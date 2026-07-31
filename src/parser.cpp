@@ -44,10 +44,13 @@ const Token & Parser::expect(TokenType type, const std::string& expected) {
 }
 
 
+StatementPointer Parser::parseMachineCall() {
+}
+
 StatementPointer Parser::parseStatement() {
-    // if (check(TokenType::KwSyscall)) {
-    //     return parseSyscallStatement();
-    // }
+    if (check(TokenType::KwMachine)) {
+        return parseMachineCall();
+    }
 
     if (check(TokenType::KwIf)) {
         return parseIfStatement();
@@ -77,7 +80,86 @@ StatementPointer Parser::parseStatement() {
         return parseBlockStatement();
     }
 
+    // Architecture
+    if (check(TokenType::KwArch)) {
+        return parseArchMap();
+    }
+
+
+
     return parseAssignmentStatement();
+}
+// Calls
+
+// Architecture
+StatementPointer Parser::parseArchMap() {
+    expect(TokenType::KwArch, "'arch' at start of arch statement");
+
+    const Token& targetToken = expect(TokenType::Identifier, "identifier after 'arch' statement");
+    const std::string targetName = targetToken.lexeme;
+
+    expect(TokenType::LBrace, "Expected '{' after block statement.");
+
+    // archMap = std::vector<ArchMap>;
+    std::vector<RegisterMap> registerMap;
+    std::vector<OpcodeMap> opcodeMap;
+
+    while (!check(TokenType::RBrace) && !isAtEnd()) {
+        if (check(TokenType::Register)) {
+            expect(TokenType::Register, "'register' at start of register in arch map");
+
+            const Token& registerToken = expect(TokenType::Identifier, "identifier at start of register map");
+            const std::string registerName = registerToken.lexeme;
+
+            expect(TokenType::Equals, "Expected '=' after identifier in assignment statement.");
+
+            const Token& actualRegisterToken = expect(TokenType::Identifier, "identifier at start of register map");
+            const std::string actualRegisterName = actualRegisterToken.lexeme;
+
+            registerMap.push_back(RegisterMap{
+                .identifier = registerName,
+                .physicalRegisterName = actualRegisterName,
+            });
+
+            if (check(TokenType::Comma)) {
+                advance();
+            }
+        } else if (check(TokenType::Opcode)) {
+            expect(TokenType::Opcode, "'opcode' at start of opcode in arch map");
+
+            const Token& opcodeToken = expect(TokenType::Identifier, "identifier at start of opcode map");
+            const std::string opcodeName = opcodeToken.lexeme;
+
+            expect(TokenType::Equals, "Expected '=' after identifier in assignment statement.");
+
+            const Token& actualOpcodeToken = expect(TokenType::Identifier, "identifier at start of opcode map");
+            const std::string actualOpcodeName = actualOpcodeToken.lexeme;
+
+            opcodeMap.push_back(OpcodeMap{
+                .identifier = opcodeName,
+                .realOpcodeName = actualOpcodeName,
+            });
+
+            if (check(TokenType::Comma)) {
+                advance();
+            }
+        } else {
+            const Token& badToken = peek();
+            throw std::runtime_error(
+                "Parse error at line " + std::to_string(badToken.line) +
+                ", column " + std::to_string(badToken.column) +
+                ": expected 'register' or 'opcode' in arch block, got \"" + badToken.lexeme + "\""
+            );
+        }
+    }
+
+    expect(TokenType::RBrace, "Expected '}' at end of block statement.");
+
+    return std::make_unique<Statement>(ArchMap{
+        .identifier = std::move(targetName),
+        .registers = std::move(registerMap),
+        .opcodes = std::move(opcodeMap),
+    });
 }
 
 // Grouped logic

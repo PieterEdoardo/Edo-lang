@@ -12,10 +12,11 @@ struct AssignmentStatement;
 struct BlockStatement;
 struct IfStatement;
 struct WhileStatement;
+struct ArchMap;
 
 using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression, UnaryExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement>;
+using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap>;
 using StatementPointer = std::unique_ptr<Statement>;
 
 struct NumberExpression {
@@ -55,4 +56,21 @@ struct IfStatement {
 struct WhileStatement {
     ExpressionPointer condition;
     std::unique_ptr<BlockStatement> thenBranch;
+};
+
+// Architecture
+struct RegisterMap {
+    std::string identifier;
+    std::string physicalRegisterName;
+};
+
+struct OpcodeMap {
+    std::string identifier;
+    std::string realOpcodeName;
+};
+
+struct ArchMap {
+    std::string identifier;
+    std::vector<RegisterMap> registers;
+    std::vector<OpcodeMap> opcodes;
 };

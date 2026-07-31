@@ -5,9 +5,15 @@ enum class TokenType {
     // Literals
     Number,
     Identifier,
+    Type,
+
+    // Architecture
+    Register,
+    Opcode,
 
     // Keywords
-    KwSyscall,
+    KwMachine,
+    KwArch,
     KwIf,
     KwElse,
     KwWhile,
@@ -25,6 +31,8 @@ enum class TokenType {
     RBracket,
     Semicolon,
     Colon,
+    Comma,
+    Dot,
 
     // Operators
     Equals,

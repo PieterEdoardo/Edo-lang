@@ -45,15 +45,13 @@ std::string printStatement(Statement& statement, const int indent) {
 
     return std::visit(Overloaded{
         [&](const AssignmentStatement& assignment) -> std::string {
-            return pad + assignment.target + " = " +
-                   printExpression(*assignment.value) + ";\n";
+            return pad + assignment.target + " = " + printExpression(*assignment.value) + ";\n";
         },
         [&](const BlockStatement& block) -> std::string {
             return printBlockStatement(block, indent);
         },
         [&](const IfStatement& ifStatement) -> std::string {
-            std::string result = pad + "if (" +
-                                  printExpression(*ifStatement.condition) + ")\n";
+            std::string result = pad + "if (" + printExpression(*ifStatement.condition) + ")\n";
             result += printBlockStatement(*ifStatement.thenBranch, indent);
             if (ifStatement.elseBranch) {
                 result += pad + "else\n";
@@ -62,10 +60,25 @@ std::string printStatement(Statement& statement, const int indent) {
             return result;
         },
         [&](const WhileStatement& whileStatement) -> std::string {
-            std::string result = pad + "while (" +
-                                  printExpression(*whileStatement.condition) + ")\n";
+            std::string result = pad + "while (" + printExpression(*whileStatement.condition) + ")\n";
             result += printBlockStatement(*whileStatement.thenBranch, indent);
             return result;
+        },
+        [&](const ArchMap& archMap) -> std::string {
+            std::string result = pad + "arch " + archMap.identifier + " {\n";
+            for (std::size_t i = 0; i < archMap.registers.size(); ++i) {
+                const auto& registers = archMap.registers[i];
+                result += "    register " + registers.identifier + " = " + registers.physicalRegisterName;
+                result += (i + 1 == archMap.registers.size()) ? "\n" : ",\n";
+            }
+            for (std::size_t i = 0; i < archMap.opcodes.size(); ++i) {
+                 const auto& opcodes = archMap.opcodes[i];
+                 result += "    opcode " + opcodes.identifier + " = " + opcodes.realOpcodeName;
+                 result += (i + 1 == archMap.opcodes.size()) ? "\n" : ",\n";
+             }
+            result += "}\n";
+            return result;
         }
+
     }, statement);
 }

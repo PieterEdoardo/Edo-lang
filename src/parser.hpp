@@ -21,9 +21,12 @@ public:
     StatementPointer parseBlockStatement();
     ExpressionPointer parseComparison();
 
+    // Calls
+    StatementPointer parseFunctionCall();
+    StatementPointer parseMachineCall();
+
     // Statements
     StatementPointer parseStatement();
-    StatementPointer parseSyscallStatement();
     StatementPointer parseIfStatement();
     StatementPointer parseElseStatement();
     StatementPointer parseWhileStatement();
@@ -35,6 +38,9 @@ public:
     // Expressions
     ExpressionPointer parseUnary();
     ExpressionPointer parseAdditive();
+
+    // Architecture
+    StatementPointer parseArchMap();
 
 private:
     std::vector<Token> tokens; // internal

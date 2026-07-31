@@ -65,6 +65,7 @@ std::vector<Token> Lexer::tokenize() {
             case '/': tokens.push_back(makeToken(TokenType::FSlash, "/", startLine, startColumn)); break;
             case '"': tokens.push_back(makeToken(TokenType::DQuote, "\"", startLine, startColumn)); break;
             case '\'': tokens.push_back(makeToken(TokenType::SQuote, "'", startLine, startColumn)); break;
+            case ',': tokens.push_back(makeToken(TokenType::Comma, ",", startLine, startColumn)); break;
             case '=': {
                 if (peek() == '=') {
                     advance();
@@ -142,14 +143,17 @@ Token Lexer::lexIdentifierOrKeyword() {
     std::string lexeme = source.substr(start, position - start);
 
     static const std::unordered_map<std::string, TokenType> keywords = {
-        {"if", TokenType::KwIf},
-        {"else", TokenType::KwElse},
-        {"for", TokenType::KwFor},
-        {"while", TokenType::KwWhile},
-        {"syscall", TokenType::KwSyscall},
-        {"return", TokenType::KwReturn},
-        {"break", TokenType::KwBreak},
-        {"continue", TokenType::KwContinue},
+        {"machine",     TokenType::KwMachine},
+        {"if",          TokenType::KwIf},
+        {"else",        TokenType::KwElse},
+        {"for",         TokenType::KwFor},
+        {"while",       TokenType::KwWhile},
+        {"return",      TokenType::KwReturn},
+        {"break",       TokenType::KwBreak},
+        {"continue",    TokenType::KwContinue},
+        {"arch",        TokenType::KwArch},
+        {"register",    TokenType::Register},
+        {"opcode",      TokenType::Opcode},
     };
 
     auto it = keywords.find(lexeme);
