@@ -13,34 +13,37 @@ public:
     const Token& expect(TokenType type, const std::string& message);
     bool isAtEnd() const;
 
-    ExpressionPointer parseExpression();
-    ExpressionPointer parsePrimary();
+    ExpressionPointer       parseExpression();
+    ExpressionPointer       parsePrimary();
 
     // Grouped logic
-    StatementPointer parseAssignmentStatement();
-    StatementPointer parseBlockStatement();
-    ExpressionPointer parseComparison();
+    StatementPointer        parseAssignmentStatement();
+    StatementPointer        parseBlockStatement();
+    ExpressionPointer       parseComparison();
 
     // Calls
-    StatementPointer parseFunctionCall();
-    StatementPointer parseMachineCall();
+    ExpressionPointer       parseParameters();
+    StatementPointer        parseFunctionCall();
+    StatementPointer        parseMachineCall();
 
     // Statements
-    StatementPointer parseStatement();
-    StatementPointer parseIfStatement();
-    StatementPointer parseElseStatement();
-    StatementPointer parseWhileStatement();
-    StatementPointer parseForStatement();
-    StatementPointer parseBreakStatement();
-    StatementPointer parseContinueStatement();
-    StatementPointer parseReturnStatement();
+    StatementPointer        parseStatement();
+
+
+    StatementPointer        parseIfStatement();
+    StatementPointer        parseElseStatement();
+    StatementPointer        parseWhileStatement();
+    StatementPointer        parseForStatement();
+    StatementPointer        parseBreakStatement();
+    StatementPointer        parseContinueStatement();
+    StatementPointer        parseReturnStatement();
 
     // Expressions
-    ExpressionPointer parseUnary();
-    ExpressionPointer parseAdditive();
+    ExpressionPointer       parseUnary();
+    ExpressionPointer       parseAdditive();
 
     // Architecture
-    StatementPointer parseArchMap();
+    StatementPointer        parseArchMap();
 
 private:
     std::vector<Token> tokens; // internal

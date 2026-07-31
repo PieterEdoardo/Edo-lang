@@ -43,10 +43,6 @@ const Token & Parser::expect(TokenType type, const std::string& expected) {
     );
 }
 
-
-StatementPointer Parser::parseMachineCall() {
-}
-
 StatementPointer Parser::parseStatement() {
     if (check(TokenType::KwMachine)) {
         return parseMachineCall();
@@ -85,22 +81,65 @@ StatementPointer Parser::parseStatement() {
         return parseArchMap();
     }
 
-
-
     return parseAssignmentStatement();
 }
+
+ExpressionPointer Parser::parseParameters() {
+    expect(TokenType::LParen, "Expected '(' after machine statement identifier");
+
+    std::vector<TypeDefinition> typeList;
+    std::vector<std::string> identifierList;
+
+    while (!check(TokenType::RParen)) {
+        const Token& typeTarget = expect(TokenType::Type, "type definition at start of parameter declaration");
+        const Token& typeIdentifierTarget = expect(TokenType::Identifier, "identifier after type definition of parameter declaration");
+
+        typeList.push_back(TypeDefinition{
+            .name = typeTarget.lexeme,
+            .byteSize = 8
+        });
+
+        identifierList.emplace_back(typeIdentifierTarget.lexeme);
+
+
+        if (check(TokenType::Comma)) {
+            advance();
+        }
+    }
+
+    return std::make_unique<Expression>(ParameterDefinition{
+        .type = std::move(typeList),
+        .identifier = std::move(identifierList)
+    });
+}
+
 // Calls
+StatementPointer Parser::parseMachineCall() {
+    expect(TokenType::KwMachine, "'machine' at start of machine statement");
+
+    const Token& token = expect(TokenType::Identifier, "identifier after machine statement");
+    const std::string name = token.lexeme;
+
+    const ExpressionPointer parameters = parseParameters();
+
+    const StatementPointer block = parseBlockStatement();
+
+
+    return std::make_unique<Call>(MachineCall{
+        .identifier = name,
+        .parameters = parameters,
+        .block = std::move(block)
+    });
+}
 
 // Architecture
 StatementPointer Parser::parseArchMap() {
     expect(TokenType::KwArch, "'arch' at start of arch statement");
 
-    const Token& targetToken = expect(TokenType::Identifier, "identifier after 'arch' statement");
-    const std::string targetName = targetToken.lexeme;
+    const Token& targetToken = expect(TokenType::Identifier, "identifier after arch statement");
 
-    expect(TokenType::LBrace, "Expected '{' after block statement.");
+    expect(TokenType::LBrace, "Expected '{' after arch statement.");
 
-    // archMap = std::vector<ArchMap>;
     std::vector<RegisterMap> registerMap;
     std::vector<OpcodeMap> opcodeMap;
 
@@ -156,7 +195,7 @@ StatementPointer Parser::parseArchMap() {
     expect(TokenType::RBrace, "Expected '}' at end of block statement.");
 
     return std::make_unique<Statement>(ArchMap{
-        .identifier = std::move(targetName),
+        .identifier = targetToken.lexeme,
         .registers = std::move(registerMap),
         .opcodes = std::move(opcodeMap),
     });
