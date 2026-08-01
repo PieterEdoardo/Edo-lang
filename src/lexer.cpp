@@ -163,3 +163,4 @@ Token Lexer::lexIdentifierOrKeyword() {
 
     return Token{TokenType::Identifier, lexeme, startLine, startColumn};
 }
+

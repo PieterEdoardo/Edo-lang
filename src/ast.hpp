@@ -99,7 +99,7 @@ struct MachineDefinition {
 };
 
 struct FunctionDefinition {
-    std::string type;
+    TypeDefinition type;
     std::string identifier;
     std::unique_ptr<ParameterDefinition> parameters;
     std::unique_ptr<BlockStatement> block;

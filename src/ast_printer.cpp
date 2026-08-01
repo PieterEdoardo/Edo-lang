@@ -10,25 +10,6 @@ namespace {
     Overloaded(Ts...) -> Overloaded<Ts...>;
 }
 
-std::string printExpression(Expression& expression) {
-    return std::visit(Overloaded{
-        [](const NumberExpression& number) -> std::string {
-            return std::to_string(number.value);
-        },
-        [](const IdentifierExpression& identifier) -> std::string {
-            return identifier.name;
-        },
-        [](const BinaryExpression& binary) -> std::string {
-            return "(" + printExpression(*binary.left) + " " +
-                binary.operatorSymbol + " " +
-                printExpression(*binary.right) + ")";
-        },
-        [](const UnaryExpression& unary) -> std::string {
-            return "(" + unary.operatorSymbol + " " + printExpression(*unary.operand) + ")";
-        }
-    }, expression);
-}
-
 static std::string printBlockStatement(const BlockStatement& block, const int indent) {
     const std::string pad(indent * 2, ' ');
     std::string result = pad + "{\n";
@@ -39,18 +20,49 @@ static std::string printBlockStatement(const BlockStatement& block, const int in
     return result;
 }
 
+static std::string printParameters(const ParameterDefinition& parameter) {
+    std::string result = "(";
+    for (std::size_t i = 0; i < parameter.identifiers.size(); ++i) {
+        result += parameter.types[i].name + " " + parameter.identifiers[i];
+        result += (i + 1 == parameter.identifiers.size()) ? ") " : ", ";
+    }
+    return result;
+}
+
+std::string printExpression(Expression& expression) {
+    return std::visit(Overloaded{
+        [](const NumberExpression &number) -> std::string {
+            return std::to_string(number.value);
+        },
+        [](const IdentifierExpression &identifier) -> std::string {
+            return identifier.name;
+        },
+        [](const BinaryExpression &binary) -> std::string {
+            return "(" + printExpression(*binary.left) + " " +
+                binary.operatorSymbol + " " +
+                printExpression(*binary.right) + ")";
+        },
+        [](const UnaryExpression &unary) -> std::string {
+            return "(" + unary.operatorSymbol + " " + printExpression(*unary.operand) + ")";
+        },
+        [](const ParameterDefinition &parameters) -> std::string {
+            return printParameters(parameters);
+        }
+    }, expression);
+}
+
 
 std::string printStatement(Statement& statement, const int indent) {
     const std::string pad(indent * 2, ' ');
 
     return std::visit(Overloaded{
-        [&](const AssignmentStatement& assignment) -> std::string {
+        [&](const AssignmentStatement &assignment) -> std::string {
             return pad + assignment.target + " = " + printExpression(*assignment.value) + ";\n";
         },
-        [&](const BlockStatement& block) -> std::string {
+        [&](const BlockStatement &block) -> std::string {
             return printBlockStatement(block, indent);
         },
-        [&](const IfStatement& ifStatement) -> std::string {
+        [&](const IfStatement &ifStatement) -> std::string {
             std::string result = pad + "if (" + printExpression(*ifStatement.condition) + ")\n";
             result += printBlockStatement(*ifStatement.thenBranch, indent);
             if (ifStatement.elseBranch) {
@@ -59,12 +71,12 @@ std::string printStatement(Statement& statement, const int indent) {
             }
             return result;
         },
-        [&](const WhileStatement& whileStatement) -> std::string {
+        [&](const WhileStatement &whileStatement) -> std::string {
             std::string result = pad + "while (" + printExpression(*whileStatement.condition) + ")\n";
             result += printBlockStatement(*whileStatement.thenBranch, indent);
             return result;
         },
-        [&](const ArchMap& archMap) -> std::string {
+        [&](const ArchMap &archMap) -> std::string {
             std::string result = pad + "arch " + archMap.identifier + " {\n";
             for (std::size_t i = 0; i < archMap.registers.size(); ++i) {
                 const auto& registers = archMap.registers[i];
@@ -75,9 +87,13 @@ std::string printStatement(Statement& statement, const int indent) {
                  const auto& opcodes = archMap.opcodes[i];
                  result += "    opcode " + opcodes.identifier + " = " + opcodes.realOpcodeName;
                  result += (i + 1 == archMap.opcodes.size()) ? "\n" : ",\n";
-             }
+            }
             result += "}\n";
             return result;
+        }, [&](const MachineDefinition &machineDefinition) -> std::string {
+            return printParameters(machineDefinition.parameters) + " " + printBlockStatement(*machineDefinition.block, indent);
+        }, [&](const FunctionDefinition &functionDefinition) -> std::string {
+            return functionDefinition.type.name + " " + functionDefinition.identifier + " " + printParameters(*functionDefinition.parameters) + " " + printBlockStatement(*functionDefinition.block, indent);
         }
 
     }, statement);
