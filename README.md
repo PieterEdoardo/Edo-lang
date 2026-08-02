@@ -5,21 +5,21 @@ Low level programming language that aims to deliver 'controlled de-abstraction'.
 Example of how the syntax will work:
 
 ```c
-    arch x86_64 {
-        register rax = registers_86_64_accumulation_64_RAX,
-        register rdi = registers_86_64_destination_64_RDI,
-        register rsi = registers_86_64_source_64_RSI,
-        register rdx = registers_86_64_dataio_64_RDX
-        register r8 = registers_86_64_R8
-    }
+arch x86_64 {
+    register rax = registers_86_64_accumulation_64_RAX,
+    register rdi = registers_86_64_destination_64_RDI,
+    register rsi = registers_86_64_source_64_RSI,
+    register rdx = registers_86_64_dataio_64_RDX
+    register r8 = registers_86_64_R8
+}
 
-    machine print(char* text, int size) {
-        rax = 1;
-        rdi = 1;
-        rsi = text;
-        rdx = size;
-        syscall();
-    }
+machine print(char* text, int size) {
+    rax = 1;
+    rdi = 1;
+    rsi = text;
+    rdx = size;
+    syscall();
+}
 
 r8 = 5;
 print(r8, 1);
