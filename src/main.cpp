@@ -60,11 +60,11 @@ int main() {
         "rdi = 1;\n"
         "rsi = text;\n"
         "rdx = size;\n"
-        "syscall();\n"
+        // "syscall();\n"
     "}\n\n"
 
-    "rax = 5;\n"
-    "print(rax, 1);\n";
+    "rax = 5;\n";
+    // "print(rax, 1);\n";
 
     Lexer lexer(source);
     const std::vector<Token> tokens = lexer.tokenize();

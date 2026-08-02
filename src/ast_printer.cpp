@@ -91,7 +91,7 @@ std::string printStatement(Statement& statement, const int indent) {
             result += "}\n";
             return result;
         }, [&](const MachineDefinition &machineDefinition) -> std::string {
-            return printParameters(machineDefinition.parameters) + " " + printBlockStatement(*machineDefinition.block, indent);
+            return "machine " + machineDefinition.identifier + " " + printParameters(machineDefinition.parameters) + " " + printBlockStatement(*machineDefinition.block, indent);
         }, [&](const FunctionDefinition &functionDefinition) -> std::string {
             return functionDefinition.type.name + " " + functionDefinition.identifier + " " + printParameters(*functionDefinition.parameters) + " " + printBlockStatement(*functionDefinition.block, indent);
         }
