@@ -154,6 +154,9 @@ Token Lexer::lexIdentifierOrKeyword() {
         {"arch",        TokenType::KwArch},
         {"register",    TokenType::Register},
         {"opcode",      TokenType::Opcode},
+        {"int",         TokenType::Int},
+        {"char",        TokenType::Char},
+        {"void",        TokenType::Void},
     };
 
     auto it = keywords.find(lexeme);

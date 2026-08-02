@@ -26,8 +26,14 @@ const Token& Parser::advance() {
     return token;
 }
 
-bool Parser::check(TokenType type) const {
+bool Parser::check(const TokenType type) const {
     return peek().type == type;
+}
+
+bool Parser::isTypeToken(const TokenType type) {
+    return type == TokenType::Int ||
+           type == TokenType::Char ||
+           type == TokenType::Void;
 }
 
 const Token & Parser::expect(TokenType type, const std::string& expected) {
@@ -91,7 +97,17 @@ ParameterDefinition Parser::parseParameters() {
     std::vector<std::string> identifierList;
 
     while (!check(TokenType::RParen)) {
-        const Token& typeTarget = expect(TokenType::Type, "type definition at start of parameter declaration");
+
+        if (!isTypeToken(peek().type)) {
+            const Token& badToken = peek();
+            throw std::runtime_error(
+                "Parse error at line " + std::to_string(badToken.line) +
+                ", column " + std::to_string(badToken.column) +
+                ": expected a type ('int', 'char', or 'void'), got \"" + badToken.lexeme + "\""
+            );
+        }
+
+        const Token& typeTarget = advance();
         const Token& typeIdentifierTarget = expect(TokenType::Identifier, "identifier after type definition of parameter declaration");
 
         typeList.push_back(TypeDefinition{

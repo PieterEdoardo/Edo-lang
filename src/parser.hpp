@@ -10,6 +10,9 @@ public:
     const Token& peek() const;
     const Token& advance();
     bool check(TokenType type) const;
+
+    static bool isTypeToken(TokenType type);
+
     const Token& expect(TokenType type, const std::string& message);
     bool isAtEnd() const;
 

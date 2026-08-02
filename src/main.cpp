@@ -55,7 +55,7 @@ int main() {
         "register rdx = registers_86_64_dataio_64_RDX\n"
     "}\n\n"
 
-    "machine print(string text, int size) {\n"
+    "machine print(char text, int size) {\n"
         "rax = 1;\n"
         "rdi = 1;\n"
         "rsi = text;\n"

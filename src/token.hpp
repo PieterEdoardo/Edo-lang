@@ -7,6 +7,11 @@ enum class TokenType {
     Identifier,
     Type,
 
+    // Types
+    Int,
+    Char,
+    Void,
+
     // Architecture
     Register,
     Opcode,
