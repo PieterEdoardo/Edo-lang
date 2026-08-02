@@ -24,3 +24,4 @@ machine print(char* text, int size) {
 r8 = 5;
 print(r8, 1);
 ```
+`> edoc example.edo --arch x86_64`
