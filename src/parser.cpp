@@ -51,7 +51,7 @@ const Token & Parser::expect(TokenType type, const std::string& expected) {
 
 StatementPointer Parser::parseStatement() {
     if (check(TokenType::KwMachine)) {
-        return parseMachineCall();
+        return parseMachineDefinition();
     }
 
     if (check(TokenType::KwIf)) {
@@ -130,7 +130,7 @@ ParameterDefinition Parser::parseParameters() {
 }
 
 // Calls
-StatementPointer Parser::parseMachineCall() {
+StatementPointer Parser::parseMachineDefinition() {
     expect(TokenType::KwMachine, "'machine' at start of machine statement");
 
     const Token& token = expect(TokenType::Identifier, "identifier after machine statement");
@@ -289,8 +289,8 @@ StatementPointer Parser::parseIfStatement() {
         );
     }
 
-    return std::make_unique<Statement>(
-        IfStatement{.condition = std::move(condition),
+    return std::make_unique<Statement>(IfStatement{
+        .condition = std::move(condition),
         .thenBranch = std::move(thenBranch),
         .elseBranch = std::move(elseBranch)}
     );
@@ -357,28 +357,51 @@ ExpressionPointer Parser::parsePrimary() {
 }
 
 // Operators
+
 ExpressionPointer Parser::parseUnary() {
     if (check(TokenType::Not)) {
         const Token& operatorToken = advance();
         ExpressionPointer operand = parseUnary();
 
         return std::make_unique<Expression>(UnaryExpression{
-            operatorToken.lexeme, std::move(operand)
+            .operatorSymbol = operatorToken.lexeme, .operand = std::move(operand)
         });
     }
 
     return parsePrimary();
 }
 
-ExpressionPointer Parser::parseAdditive() {
-    ExpressionPointer left = parsePrimary();
+ExpressionPointer Parser::parseMultiplicative() {
+    ExpressionPointer left = parseUnary();
 
-    while (check(TokenType::Plus) || check(TokenType::Minus)) {
+    while (check(TokenType::Star) || check(TokenType::FSlash) || check(TokenType::Modulo)) {
         const Token& operatorToken = advance();
-        ExpressionPointer right = parsePrimary();
+        ExpressionPointer right = parseUnary();
 
-        left = std::make_unique<Expression>(BinaryExpression{std::move(left), operatorToken.lexeme, std::move(right)});
+        left = std::make_unique<Expression>(BinaryExpression{
+            .left = std::move(left),
+            .operatorSymbol = operatorToken.lexeme,
+            .right = std::move(right)
+        });
     }
 
     return left;
 }
+
+ExpressionPointer Parser::parseAdditive() {
+    ExpressionPointer left = parseMultiplicative();
+
+    while (check(TokenType::Plus) || check(TokenType::Minus)) {
+        const Token& operatorToken = advance();
+        ExpressionPointer right = parseMultiplicative();
+
+        left = std::make_unique<Expression>(BinaryExpression{
+            .left = std::move(left),
+            .operatorSymbol = operatorToken.lexeme,
+            .right = std::move(right)
+        });
+    }
+
+    return left;
+}
+

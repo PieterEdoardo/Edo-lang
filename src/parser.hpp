@@ -7,9 +7,9 @@ class Parser {
 public:
     explicit Parser(std::vector<Token> tokens);
 
-    const Token& peek() const;
+    [[nodiscard]] const Token& peek() const;
     const Token& advance();
-    bool check(TokenType type) const;
+    [[nodiscard]] bool check(TokenType type) const;
 
     static bool isTypeToken(TokenType type);
 
@@ -26,24 +26,23 @@ public:
 
     // Calls
     ParameterDefinition     parseParameters();
-    StatementPointer        parseFunctionCall();
-    StatementPointer        parseMachineCall();
+    StatementPointer        parseFunctionDefinition();
+    StatementPointer        parseMachineDefinition();
 
     // Statements
     StatementPointer        parseStatement();
-
-
     StatementPointer        parseIfStatement();
-    StatementPointer        parseElseStatement();
     StatementPointer        parseWhileStatement();
     StatementPointer        parseForStatement();
     StatementPointer        parseBreakStatement();
     StatementPointer        parseContinueStatement();
     StatementPointer        parseReturnStatement();
 
-    // Expressions
+    // Operators
     ExpressionPointer       parseUnary();
     ExpressionPointer       parseAdditive();
+    ExpressionPointer       parseMultiplicative();
+
 
     // Architecture
     StatementPointer        parseArchMap();
