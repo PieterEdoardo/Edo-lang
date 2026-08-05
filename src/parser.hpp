@@ -14,7 +14,7 @@ public:
     static bool isTypeToken(TokenType type);
 
     const Token& expect(TokenType type, const std::string& message);
-    bool isAtEnd() const;
+    [[nodiscard]] bool isAtEnd() const;
 
     ExpressionPointer       parseExpression();
     ExpressionPointer       parsePrimary();
@@ -49,5 +49,5 @@ public:
 
 private:
     std::vector<Token> tokens; // internal
-    size_t position = 0; // internal
+    std::size_t position = 0; // internal
 };

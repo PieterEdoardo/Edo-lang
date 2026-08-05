@@ -280,13 +280,14 @@ StatementPointer Parser::parseIfStatement() {
         std::move(std::get<BlockStatement>(*thenStatement))
     );
 
-    std::unique_ptr<BlockStatement> elseBranch = nullptr;
+    StatementPointer elseBranch = nullptr;
     if (check(TokenType::KwElse)) {
         advance();
-        const StatementPointer elseStatement = parseBlockStatement();
-        elseBranch = std::make_unique<BlockStatement>(
-            std::move(std::get<BlockStatement>(*elseStatement))
-        );
+        if (check(TokenType::KwIf)) {
+            elseBranch = parseIfStatement();
+        } else {
+            elseBranch = parseBlockStatement();
+        }
     }
 
     return std::make_unique<Statement>(IfStatement{
@@ -322,7 +323,7 @@ ExpressionPointer Parser::parsePrimary() {
     // Character groups
     if (check(TokenType::Number)) {
         advance();
-        int value = std::stoi(token.lexeme);
+        const int value = std::stoi(token.lexeme);
         return std::make_unique<Expression>(NumberExpression{value});
     }
 

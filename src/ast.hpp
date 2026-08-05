@@ -57,12 +57,29 @@ struct BlockStatement {
 struct IfStatement {
     ExpressionPointer condition;
     std::unique_ptr<BlockStatement> thenBranch;
-    std::unique_ptr<BlockStatement> elseBranch;
+    StatementPointer elseBranch;
 };
 
 struct WhileStatement {
     ExpressionPointer condition;
     std::unique_ptr<BlockStatement> thenBranch;
+};
+
+struct TypeDefinition {
+    std::string name;
+    std::size_t byteSize;
+};
+
+struct ParameterDefinition {
+    std::vector<TypeDefinition> types;
+    std::vector<std::string> identifiers;
+};
+
+struct FunctionDefinition {
+    TypeDefinition type;
+    std::string identifier;
+    std::unique_ptr<ParameterDefinition> parameters;
+    std::unique_ptr<BlockStatement> block;
 };
 
 // Architecture
@@ -82,25 +99,8 @@ struct ArchMap {
     std::vector<OpcodeMap> opcodes;
 };
 
-struct TypeDefinition {
-    std::string name;
-    std::size_t byteSize;
-};
-
-struct ParameterDefinition {
-    std::vector<TypeDefinition> types;
-    std::vector<std::string> identifiers;
-};
-
 struct MachineDefinition {
     std::string identifier;
     ParameterDefinition parameters;
-    std::unique_ptr<BlockStatement> block;
-};
-
-struct FunctionDefinition {
-    TypeDefinition type;
-    std::string identifier;
-    std::unique_ptr<ParameterDefinition> parameters;
     std::unique_ptr<BlockStatement> block;
 };
