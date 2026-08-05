@@ -46,8 +46,14 @@ static std::string tokenTypeToString(TokenType type) {
 
 int main() {
     const std::string source =
-
-    "rax = 2 + 3 * 4 - 1;";
+    "rax = 2 + 3 * 4 - 1;\n"
+    "if (rax == 13) {\n"
+    "rdi = 4;\n"
+    "} else if (rax == 0) {\n"
+    "rdi = 6;\n"
+    "} else {\n"
+    "rdi = 7;\n"
+    "}\n";
     // "print(rax, 1);\n";
 
     Lexer lexer(source);

@@ -47,8 +47,8 @@ std::vector<Token> Lexer::tokenize() {
             continue;
         }
 
-        int startLine = line;
-        int startColumn = column;
+        const int startLine = line;
+        const int startColumn = column;
         advance();
 
         switch (character) {
@@ -66,6 +66,7 @@ std::vector<Token> Lexer::tokenize() {
             case '"': tokens.push_back(makeToken(TokenType::DQuote, "\"", startLine, startColumn)); break;
             case '\'': tokens.push_back(makeToken(TokenType::SQuote, "'", startLine, startColumn)); break;
             case ',': tokens.push_back(makeToken(TokenType::Comma, ",", startLine, startColumn)); break;
+            case '|': tokens.push_back(makeToken(TokenType::Pipe, "|", startLine, startColumn)); break;
             case '&': tokens.push_back(makeToken(TokenType::Ampersand, "&", startLine, startColumn)); break;
             case '=': {
                 if (peek() == '=') {

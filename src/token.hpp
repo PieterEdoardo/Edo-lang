@@ -49,6 +49,9 @@ enum class TokenType {
     Modulo,
     Lesser,
     Greater,
+    Pipe,
+    Or,
+    And,
 
     // Unary operators
     Not,

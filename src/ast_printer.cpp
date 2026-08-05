@@ -47,6 +47,9 @@ std::string printExpression(Expression& expression) {
         },
         [](const ParameterDefinition &parameters) -> std::string {
             return printParameters(parameters);
+        },
+        [](const CallExpression &call) -> std::string {
+            return "";
         }
     }, expression);
 }
@@ -67,7 +70,7 @@ std::string printStatement(Statement& statement, const int indent) {
             result += printBlockStatement(*ifStatement.thenBranch, indent);
             if (ifStatement.elseBranch) {
                 result += pad + "else\n";
-                result += printBlockStatement(*ifStatement.elseBranch, indent);
+                result += printStatement(*ifStatement.elseBranch, indent);
             }
             return result;
         },
