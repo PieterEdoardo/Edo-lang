@@ -14,7 +14,7 @@ char Lexer::peek() const {
 }
 
 char Lexer::advance() {
-    char character = source[position++];
+    const char character = source[position++];
 
     if (character == '\n') {
         line++;
@@ -30,7 +30,7 @@ std::vector<Token> Lexer::tokenize() {
     std::vector<Token> tokens;
 
     while (!isAtEnd()) {
-        char character = peek();
+        const char character = peek();
 
         if (std::isspace(static_cast<unsigned char>(character))) {
             advance();
@@ -66,6 +66,7 @@ std::vector<Token> Lexer::tokenize() {
             case '"': tokens.push_back(makeToken(TokenType::DQuote, "\"", startLine, startColumn)); break;
             case '\'': tokens.push_back(makeToken(TokenType::SQuote, "'", startLine, startColumn)); break;
             case ',': tokens.push_back(makeToken(TokenType::Comma, ",", startLine, startColumn)); break;
+            case '&': tokens.push_back(makeToken(TokenType::Ampersand, "&", startLine, startColumn)); break;
             case '=': {
                 if (peek() == '=') {
                     advance();
@@ -103,44 +104,64 @@ std::vector<Token> Lexer::tokenize() {
                 break;
             }
             default: {
-                Token invalid{TokenType::Invalid, std::string(1, character), startLine, startColumn};
+                Token invalid{
+                    .type = TokenType::Invalid,
+                    .lexeme = std::string(1, character),
+                    .line = startLine,
+                    .column = startColumn
+                };
                 tokens.push_back(invalid);
             }
         }
     }
 
-    tokens.push_back(Token{TokenType::EndOfFile, "", line, column});
+    tokens.push_back(Token{
+        .type = TokenType::EndOfFile,
+        .lexeme = "",
+        .line = line,
+        .column = column
+    });
     return tokens;
 }
 
-Token Lexer::makeToken(TokenType type, const std::string& lexeme, int tokenLine, int tokenColumn) {
-    return Token{type, lexeme, tokenLine, tokenColumn};
+Token Lexer::makeToken(const TokenType type, const std::string& lexeme, int tokenLine, int tokenColumn) {
+    return Token{
+        .type = type,
+        .lexeme = lexeme,
+        .line = tokenLine,
+        .column = tokenColumn
+    };
 }
 
 Token Lexer::lexNumber() {
-    int startLine = line;
-    int startColumn = column;
-    size_t start = position;
+    const int startLine = line;
+    const int startColumn = column;
+    const size_t start = position;
 
     while (!isAtEnd() && std::isdigit(static_cast<unsigned char>(peek()))) {
         advance();
     }
 
-    std::string lexeme = source.substr(start, position - start);
+    const std::string lexeme = source.substr(start, position - start);
 
-    return Token{TokenType::Number, lexeme, startLine, startColumn};
+    return Token{
+        .type = TokenType::Number,
+        .lexeme = lexeme,
+        .line = startLine,
+        .column = startColumn
+    };
 }
 
 Token Lexer::lexIdentifierOrKeyword() {
-    int startLine = line;
-    int startColumn = column;
-    size_t start = position;
+    const int startLine = line;
+    const int startColumn = column;
+    const size_t start = position;
 
     while (!isAtEnd() && (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_')) {
         advance();
     }
 
-    std::string lexeme = source.substr(start, position - start);
+    const std::string lexeme = source.substr(start, position - start);
 
     static const std::unordered_map<std::string, TokenType> keywords = {
         {"machine",     TokenType::KwMachine},
@@ -159,11 +180,20 @@ Token Lexer::lexIdentifierOrKeyword() {
         {"void",        TokenType::Void},
     };
 
-    auto it = keywords.find(lexeme);
-    if (it != keywords.end()) {
-        return Token{it->second, lexeme, startLine, startColumn};
+    if (const auto it = keywords.find(lexeme); it != keywords.end()) {
+        return Token{
+            .type = it->second,
+            .lexeme = lexeme,
+            .line = startLine,
+            .column = startColumn
+        };
     }
 
-    return Token{TokenType::Identifier, lexeme, startLine, startColumn};
+    return Token{
+        .type = TokenType::Identifier,
+        .lexeme = lexeme,
+        .line = startLine,
+        .column = startColumn
+    };
 }
 

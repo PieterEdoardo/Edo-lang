@@ -52,6 +52,7 @@ enum class TokenType {
 
     // Unary operators
     Not,
+    Ampersand,
 
     // Quotes
     DQuote,
