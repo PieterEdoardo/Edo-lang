@@ -30,6 +30,13 @@ bool Parser::check(const TokenType type) const {
     return peek().type == type;
 }
 
+bool Parser::checkAhead(const TokenType type, const std::size_t offset) const {
+    if (position + offset >= tokens.size()) {
+        return false;
+    }
+    return tokens[position + offset].type == type;
+}
+
 bool Parser::isTypeToken(const TokenType type) {
     return type == TokenType::Int ||
            type == TokenType::Char ||
@@ -50,6 +57,19 @@ const Token & Parser::expect(TokenType type, const std::string& expected) {
 }
 
 StatementPointer Parser::parseStatement() {
+    // Typed declarations
+    if (isTypeToken(peek().type) && checkAhead(TokenType::Identifier, 1)) {
+        if (checkAhead(TokenType::LParen, 2)) return parseFunctionDefinition();
+        // if (checkAhead(TokenType::Star, 2)) return parsePointerDeclaration();
+        // if (checkAhead(TokenType::Equals, 2)) return parseVariableDeclaration();
+    }
+
+    // Double checks
+    if (check(TokenType::Identifier) && checkAhead(TokenType::LParen, 1)) {
+        return parseCallStatement();
+    }
+
+    // Single checks
     if (check(TokenType::KwMachine)) {
         return parseMachineDefinition();
     }
@@ -78,6 +98,7 @@ StatementPointer Parser::parseStatement() {
     //     return parseReturnStatement();
     // }
 
+
     if (check(TokenType::LBrace)) {
         return parseBlockStatement();
     }
@@ -90,6 +111,23 @@ StatementPointer Parser::parseStatement() {
     return parseAssignmentStatement();
 }
 
+TypeDefinition Parser::parseTypeDefinition() {
+    if (!isTypeToken(peek().type)) {
+        const Token& badToken = peek();
+        throw std::runtime_error(
+            "Parse error at line " + std::to_string(badToken.line) +
+            ", column " + std::to_string(badToken.column) +
+            ": expected a type ('int', 'char', or 'void'), got \"" + badToken.lexeme + "\""
+        );
+    }
+    const Token& typeTarget = advance();
+
+    return TypeDefinition{
+        .name = typeTarget.lexeme,
+        .byteSize = 8
+    };
+}
+
 ParameterDefinition Parser::parseParameters() {
     expect(TokenType::LParen, "Expected '(' after machine statement identifier");
 
@@ -97,21 +135,11 @@ ParameterDefinition Parser::parseParameters() {
     std::vector<std::string> identifierList;
 
     while (!check(TokenType::RParen)) {
-
-        if (!isTypeToken(peek().type)) {
-            const Token& badToken = peek();
-            throw std::runtime_error(
-                "Parse error at line " + std::to_string(badToken.line) +
-                ", column " + std::to_string(badToken.column) +
-                ": expected a type ('int', 'char', or 'void'), got \"" + badToken.lexeme + "\""
-            );
-        }
-
-        const Token& typeTarget = advance();
+        TypeDefinition typeTarget = parseTypeDefinition();
         const Token& typeIdentifierTarget = expect(TokenType::Identifier, "identifier after type definition of parameter declaration");
 
         typeList.push_back(TypeDefinition{
-            .name = typeTarget.lexeme,
+            .name = typeTarget.name,
             .byteSize = 8
         });
         identifierList.emplace_back(typeIdentifierTarget.lexeme);
@@ -127,6 +155,60 @@ ParameterDefinition Parser::parseParameters() {
         .types = std::move(typeList),
         .identifiers = std::move(identifierList)
     };
+}
+
+std::vector<ExpressionPointer> Parser::parseArguments() {
+
+    expect(TokenType::LParen, "parentheses at beginning of arguments");
+
+    std::vector<ExpressionPointer> arguments;
+
+    while (!check(TokenType::RParen)) {
+        arguments.push_back(parseExpression());
+
+        if (check(TokenType::Comma)) advance();
+    }
+
+    expect(TokenType::RParen, "')' at end of arguments");
+
+    return arguments;
+}
+
+StatementPointer Parser::parseCallStatement() {
+    const Token& token = expect(TokenType::Identifier, "identifier at start of call");
+
+    if (!checkAhead(TokenType::Identifier, 2)) auto arguments = nullptr;
+        // no arguments: call();
+    std::vector<ExpressionPointer> arguments = parseArguments();
+
+    expect(TokenType::Semicolon, "';' after call statement");
+
+    return std::make_unique<Statement>(ExpressionStatement{
+        .expression = std::make_unique<Expression>(CallExpression{
+            .identifier = token.lexeme,
+            .arguments = std::move(arguments)
+        })
+    });
+}
+
+StatementPointer Parser::parseFunctionDefinition() {
+    TypeDefinition typeTarget = parseTypeDefinition();
+
+    const Token token = expect(TokenType::Identifier, "identifier after function definition");
+
+    ParameterDefinition parameters = parseParameters();
+
+    const StatementPointer blockStatement = parseBlockStatement();
+    auto block = std::make_unique<BlockStatement>(
+      std::move(std::get<BlockStatement>(*blockStatement))
+    );
+
+    return std::make_unique<Statement>(FunctionDefinition{
+        .type = std::move(typeTarget),
+        .identifier = token.lexeme,
+        .parameters = std::move(parameters),
+        .block = std::move(block)
+    });
 }
 
 // Calls

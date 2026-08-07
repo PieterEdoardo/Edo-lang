@@ -49,6 +49,7 @@ int main() {
     "rax = 2 + 3 * 4 - 1;\n"
     "if (rax == 13) {\n"
     "rdi = 4;\n"
+    "test(rax, rdi);\n"
     "} else if (rax == 0) {\n"
     "rdi = 6;\n"
     "} else {\n"

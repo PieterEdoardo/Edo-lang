@@ -100,8 +100,10 @@ std::string printStatement(Statement& statement, const int indent) {
         }, [&](const FunctionDefinition &functionDefinition) -> std::string {
             return functionDefinition.type.name + " "
             + functionDefinition.identifier + " "
-            + printParameters(*functionDefinition.parameters) + " "
+            + printParameters(functionDefinition.parameters) + " "
             + printBlockStatement(*functionDefinition.block, indent);
+        }, [&](const ExpressionStatement &expressionStatement) -> std::string {
+            return "expressionStatement";
         }
 
     }, statement);

@@ -20,12 +20,16 @@ struct TypeDefinition;
 struct MachineDefinition;
 struct FunctionDefinition;
 struct CallExpression;
+struct ExpressionStatement;
 
 using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression, UnaryExpression, ParameterDefinition, CallExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap, MachineDefinition, FunctionDefinition>;
+using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement>;
 using StatementPointer = std::unique_ptr<Statement>;
 
+struct ExpressionStatement {
+    ExpressionPointer expression;
+};
 
 struct NumberExpression {
     int value;
@@ -84,7 +88,7 @@ struct ParameterDefinition {
 struct FunctionDefinition {
     TypeDefinition type;
     std::string identifier;
-    std::unique_ptr<ParameterDefinition> parameters;
+    ParameterDefinition parameters;
     std::unique_ptr<BlockStatement> block;
 };
 

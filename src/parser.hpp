@@ -10,6 +10,7 @@ public:
     [[nodiscard]] const Token& peek() const;
     const Token& advance();
     [[nodiscard]] bool check(TokenType type) const;
+    [[nodiscard]] bool checkAhead(TokenType type, std::size_t offset) const;
 
     static bool isTypeToken(TokenType type);
 
@@ -26,11 +27,21 @@ public:
 
     // Calls
     ParameterDefinition     parseParameters();
+
+    std::vector<ExpressionPointer> parseArguments();
+
+    StatementPointer parseCallExpression();
+
+
     StatementPointer        parseFunctionDefinition();
     StatementPointer        parseMachineDefinition();
 
     // Statements
     StatementPointer        parseStatement();
+    StatementPointer        parseCallStatement();
+
+    TypeDefinition          parseTypeDefinition();
+
     StatementPointer        parseIfStatement();
     StatementPointer        parseWhileStatement();
     StatementPointer        parseForStatement();
