@@ -1,6 +1,9 @@
 #include "parser.hpp"
+
+#include <algorithm>
 #include <memory>
 #include <stdexcept>
+#include <iostream>
 
 Parser::Parser(std::vector<Token> tokens) : tokens(std::move(tokens)) {}
 
@@ -37,13 +40,23 @@ bool Parser::checkAhead(const TokenType type, const std::size_t offset) const {
     return tokens[position + offset].type == type;
 }
 
+bool Parser::checkAny(const std::initializer_list<TokenType> types) const {
+    for (const TokenType type : types) {
+        if (check(type)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool Parser::isTypeToken(const TokenType type) {
     return type == TokenType::Int ||
            type == TokenType::Char ||
            type == TokenType::Void;
 }
 
-const Token & Parser::expect(TokenType type, const std::string& expected) {
+const Token & Parser::expect(const TokenType type, const std::string& message) {
     if (check(type)) {
         return advance();
     }
@@ -52,16 +65,28 @@ const Token & Parser::expect(TokenType type, const std::string& expected) {
     throw std::runtime_error(
         "Parse error at line " + std::to_string(token.line) +
         ", column " + std::to_string(token.column) +
-        ": expected '" + expected + ", got \"" + token.lexeme + "\""
+        ": expected '" + message + ", got \"" + token.lexeme + "\""
     );
 }
 
 StatementPointer Parser::parseStatement() {
+    std::string result = isTypeToken(peek().type) ? "yes " : "no ";
+    std::cout << result;
+
+    std::cout << "token: \"" << peek().lexeme << "\" type=" << static_cast<int>(peek().type) << "\n";
     // Typed declarations
-    if (isTypeToken(peek().type) && checkAhead(TokenType::Identifier, 1)) {
-        if (checkAhead(TokenType::LParen, 2)) return parseFunctionDefinition();
-        // if (checkAhead(TokenType::Star, 2)) return parsePointerDeclaration();
-        // if (checkAhead(TokenType::Equals, 2)) return parseVariableDeclaration();
+    if (isTypeToken(peek().type)) {
+        std::cout << "test";
+        std::size_t identifierOffset = 1;
+        if (checkAhead(TokenType::Star, 1)) identifierOffset = 2;
+
+        if (checkAhead(TokenType::Identifier, identifierOffset) && checkAhead(TokenType::LParen, identifierOffset + 1)) {
+            return parseFunctionDefinition();
+        }
+
+        if (checkAhead(TokenType::Identifier, identifierOffset)) {
+            return parseVariableDeclaration();
+        }
     }
 
     // Double checks
@@ -177,8 +202,6 @@ std::vector<ExpressionPointer> Parser::parseArguments() {
 StatementPointer Parser::parseCallStatement() {
     const Token& token = expect(TokenType::Identifier, "identifier at start of call");
 
-    if (!checkAhead(TokenType::Identifier, 2)) auto arguments = nullptr;
-        // no arguments: call();
     std::vector<ExpressionPointer> arguments = parseArguments();
 
     expect(TokenType::Semicolon, "';' after call statement");
@@ -228,6 +251,31 @@ StatementPointer Parser::parseMachineDefinition() {
         .identifier = token.lexeme,
         .parameters = std::move(parameters),
         .block = std::move(block)
+    });
+}
+
+StatementPointer Parser::parseVariableDeclaration() {
+    TypeDefinition typeTarget = parseTypeDefinition();
+
+    if (check(TokenType::Star)) {
+        advance();
+        typeTarget.isPointer = true;
+    }
+
+    const Token& identifierToken = expect(TokenType::Identifier, "identifier after type in declaration");
+
+    ExpressionPointer initializer = nullptr;
+    if (check(TokenType::Equals)) {
+        advance();
+        initializer = parseExpression();
+    }
+
+    expect(TokenType::Semicolon, "';' after declaration");
+
+    return std::make_unique<Statement>(VariableDeclaration{
+        .type = std::move(typeTarget),
+        .identifier = identifierToken.lexeme,
+        .initializer = std::move(initializer)
     });
 }
 
@@ -442,12 +490,13 @@ ExpressionPointer Parser::parsePrimary() {
 // Operators
 
 ExpressionPointer Parser::parseUnary() {
-    if (check(TokenType::Not)) {
+    if (checkAny({TokenType::Not, TokenType::Ampersand, TokenType::Star})) {
         const Token& operatorToken = advance();
         ExpressionPointer operand = parseUnary();
 
         return std::make_unique<Expression>(UnaryExpression{
-            .operatorSymbol = operatorToken.lexeme, .operand = std::move(operand)
+            .operatorSymbol = operatorToken.lexeme,
+            .operand = std::move(operand)
         });
     }
 

@@ -21,11 +21,24 @@ struct MachineDefinition;
 struct FunctionDefinition;
 struct CallExpression;
 struct ExpressionStatement;
+struct VariableDeclaration;
 
-using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression, UnaryExpression, ParameterDefinition, CallExpression>;
+using Expression = std::variant<NumberExpression, IdentifierExpression, BinaryExpression, UnaryExpression, CallExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement>;
+using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement, VariableDeclaration>;
 using StatementPointer = std::unique_ptr<Statement>;
+
+struct TypeDefinition {
+    std::string name;
+    bool isPointer;
+    std::size_t byteSize;
+};
+
+struct VariableDeclaration {
+    TypeDefinition type;
+    std::string identifier;
+    ExpressionPointer initializer;
+};
 
 struct ExpressionStatement {
     ExpressionPointer expression;
@@ -75,10 +88,6 @@ struct WhileStatement {
     std::unique_ptr<BlockStatement> thenBranch;
 };
 
-struct TypeDefinition {
-    std::string name;
-    std::size_t byteSize;
-};
 
 struct ParameterDefinition {
     std::vector<TypeDefinition> types;

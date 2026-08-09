@@ -47,9 +47,12 @@ static std::string tokenTypeToString(TokenType type) {
 int main() {
     const std::string source =
     "rax = 2 + 3 * 4 - 1;\n"
+    "int x = 54;\n"
+    "char* text = \"Hello World!\";\n"
     "if (rax == 13) {\n"
     "rdi = 4;\n"
     "test(rax, rdi);\n"
+    "exit();\n"
     "} else if (rax == 0) {\n"
     "rdi = 6;\n"
     "} else {\n"

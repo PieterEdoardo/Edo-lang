@@ -5,7 +5,6 @@ enum class TokenType {
     // Literals
     Number,
     Identifier,
-    Type,
 
     // Types
     Int,

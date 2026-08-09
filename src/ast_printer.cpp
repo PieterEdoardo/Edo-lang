@@ -45,9 +45,6 @@ std::string printExpression(Expression& expression) {
         [](const UnaryExpression &unary) -> std::string {
             return "(" + unary.operatorSymbol + " " + printExpression(*unary.operand) + ")";
         },
-        [](const ParameterDefinition &parameters) -> std::string {
-            return printParameters(parameters);
-        },
         [](const CallExpression &call) -> std::string {
             return "";
         }
@@ -93,17 +90,26 @@ std::string printStatement(Statement& statement, const int indent) {
             }
             result += "}\n";
             return result;
-        }, [&](const MachineDefinition &machineDefinition) -> std::string {
+        },
+        [&](const MachineDefinition &machineDefinition) -> std::string {
             return "machine " + machineDefinition.identifier + " "
             + printParameters(machineDefinition.parameters) + " "
             + printBlockStatement(*machineDefinition.block, indent);
-        }, [&](const FunctionDefinition &functionDefinition) -> std::string {
+        },
+        [&](const FunctionDefinition &functionDefinition) -> std::string {
             return functionDefinition.type.name + " "
             + functionDefinition.identifier + " "
             + printParameters(functionDefinition.parameters) + " "
             + printBlockStatement(*functionDefinition.block, indent);
-        }, [&](const ExpressionStatement &expressionStatement) -> std::string {
+        },
+        [&](const ExpressionStatement &expressionStatement) -> std::string {
             return "expressionStatement";
+        },
+        [&](const VariableDeclaration &variableDeclaration) -> std::string {
+            std::string result = variableDeclaration.type.name;
+            if (variableDeclaration.type.isPointer) result += '*';
+            result += variableDeclaration.identifier + " = " ;
+            return result;
         }
 
     }, statement);
