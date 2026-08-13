@@ -70,13 +70,13 @@ const Token & Parser::expect(const TokenType type, const std::string& message) {
 }
 
 StatementPointer Parser::parseStatement() {
-    std::string result = isTypeToken(peek().type) ? "yes " : "no ";
-    std::cout << result;
+    // std::string result = isTypeToken(peek().type) ? "yes " : "no ";
+    // std::cout << result;
 
-    std::cout << "token: \"" << peek().lexeme << "\" type=" << static_cast<int>(peek().type) << "\n";
+    // std::cout << "token: \"" << peek().lexeme << "\" type=" << static_cast<int>(peek().type) << "\n";
     // Typed declarations
     if (isTypeToken(peek().type)) {
-        std::cout << "test";
+        // std::cout << "test";
         std::size_t identifierOffset = 1;
         if (checkAhead(TokenType::Star, 1)) identifierOffset = 2;
 
@@ -95,15 +95,15 @@ StatementPointer Parser::parseStatement() {
     }
 
     // Single checks
-    if (check(TokenType::KwMachine)) {
+    if (check(TokenType::Machine)) {
         return parseMachineDefinition();
     }
 
-    if (check(TokenType::KwIf)) {
+    if (check(TokenType::If)) {
         return parseIfStatement();
     }
 
-    if (check(TokenType::KwWhile)) {
+    if (check(TokenType::While)) {
         return parseWhileStatement();
     }
 
@@ -129,7 +129,7 @@ StatementPointer Parser::parseStatement() {
     }
 
     // Architecture
-    if (check(TokenType::KwArch)) {
+    if (check(TokenType::Arch)) {
         return parseArchMap();
     }
 
@@ -236,7 +236,7 @@ StatementPointer Parser::parseFunctionDefinition() {
 
 // Calls
 StatementPointer Parser::parseMachineDefinition() {
-    expect(TokenType::KwMachine, "'machine' at start of machine statement");
+    expect(TokenType::Machine, "'machine' at start of machine statement");
 
     const Token& token = expect(TokenType::Identifier, "identifier after machine statement");
 
@@ -281,7 +281,7 @@ StatementPointer Parser::parseVariableDeclaration() {
 
 // Architecture
 StatementPointer Parser::parseArchMap() {
-    expect(TokenType::KwArch, "'arch' at start of arch statement");
+    expect(TokenType::Arch, "'arch' at start of arch statement");
 
     const Token& targetToken = expect(TokenType::Identifier, "identifier after arch statement");
 
@@ -350,7 +350,23 @@ StatementPointer Parser::parseArchMap() {
 
 // Grouped logic
 StatementPointer Parser::parseAssignmentStatement() {
-    const Token& targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
+    Token targetToken;
+    bool dereference = false;
+    if (check(TokenType::Star) && checkAhead(TokenType::Identifier, 1)) {
+        expect(TokenType::Star, "'*' operator at start of assignment statement");
+        targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
+        dereference = true;
+    } else if (check(TokenType::Identifier)) {
+        targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
+    } else {
+        const Token& badToken = peek();
+        throw std::runtime_error(
+            "Parse error at line " + std::to_string(badToken.line) +
+            ", column " + std::to_string(badToken.column) +
+            ": expected identifier or '*identifier' at start of assignment statement, got \"" + badToken.lexeme + "\""
+        );
+    }
+
     const std::string targetName = targetToken.lexeme;
 
     expect(TokenType::Equals, "Expected '=' after identifier in assignment statement.");
@@ -359,7 +375,11 @@ StatementPointer Parser::parseAssignmentStatement() {
 
     expect(TokenType::Semicolon, "Expected ';' after assignment statement.");
 
-    return std::make_unique<Statement>(AssignmentStatement{targetName, std::move(value)});
+    return std::make_unique<Statement>(AssignmentStatement{
+        .target = targetName,
+        .dereference = dereference,
+        .value = std::move(value)
+    });
 }
 
 StatementPointer Parser::parseBlockStatement() {
@@ -398,7 +418,7 @@ ExpressionPointer Parser::parseComparison() {
 
 // Statements
 StatementPointer Parser::parseIfStatement() {
-    expect(TokenType::KwIf, "'if' at start of if statement");
+    expect(TokenType::If, "'if' at start of if statement");
     expect(TokenType::LParen, "'(' after 'if'");
 
     ExpressionPointer condition = parseExpression();
@@ -411,9 +431,9 @@ StatementPointer Parser::parseIfStatement() {
     );
 
     StatementPointer elseBranch = nullptr;
-    if (check(TokenType::KwElse)) {
+    if (check(TokenType::Else)) {
         advance();
-        if (check(TokenType::KwIf)) {
+        if (check(TokenType::If)) {
             elseBranch = parseIfStatement();
         } else {
             elseBranch = parseBlockStatement();
@@ -428,7 +448,7 @@ StatementPointer Parser::parseIfStatement() {
 }
 
 StatementPointer Parser::parseWhileStatement() {
-    expect(TokenType::KwWhile, "'while' at start of while statement");
+    expect(TokenType::While, "'while' at start of while statement");
     expect(TokenType::LParen, "'(' after 'while'");
 
     ExpressionPointer condition = parseExpression();
@@ -451,6 +471,11 @@ ExpressionPointer Parser::parsePrimary() {
     const Token& token = peek();
 
     // Character groups
+    if (check(TokenType::String)) {
+        advance();
+        return std::make_unique<Expression>(StringExpression{token.lexeme});
+    }
+
     if (check(TokenType::Number)) {
         advance();
         const int value = std::stoi(token.lexeme);
@@ -458,6 +483,16 @@ ExpressionPointer Parser::parsePrimary() {
     }
 
     if (check(TokenType::Identifier)) {
+        if (checkAhead(TokenType::LParen, 1)) {
+            const Token& identifierToken = advance();
+            std::vector<ExpressionPointer> arguments = parseArguments();
+
+            return std::make_unique<Expression>(CallExpression{
+                .identifier = identifierToken.lexeme,
+                .arguments = std::move(arguments)
+            });
+        }
+
         advance();
         return std::make_unique<Expression>(IdentifierExpression{token.lexeme});
     }
@@ -478,6 +513,26 @@ ExpressionPointer Parser::parsePrimary() {
         advance();
 
         return inner;
+    }
+
+    if (check(TokenType::Int)) {
+        Token integerToken = advance();
+        return std::make_unique<Expression>(TypeExpression{
+            .type = TypeDefinition{
+                .name = std::move(integerToken.lexeme),
+                .byteSize = 8
+            }
+        });
+    }
+
+    if (check(TokenType::Char)) {
+        Token integerToken = advance();
+        return std::make_unique<Expression>(TypeExpression{
+            .type = TypeDefinition{
+                .name = std::move(integerToken.lexeme),
+                .byteSize = 1
+            }
+        });
     }
 
     throw std::runtime_error(

@@ -47,6 +47,11 @@ std::vector<Token> Lexer::tokenize() {
             continue;
         }
 
+        if (character == '"') {
+            tokens.push_back(lexString());
+            continue;
+        }
+
         const int startLine = line;
         const int startColumn = column;
         advance();
@@ -63,7 +68,6 @@ std::vector<Token> Lexer::tokenize() {
             case '%': tokens.push_back(makeToken(TokenType::Modulo, "%", startLine, startColumn)); break;
             case '\\': tokens.push_back(makeToken(TokenType::BSlash, "\\", startLine, startColumn)); break;
             case '/': tokens.push_back(makeToken(TokenType::FSlash, "/", startLine, startColumn)); break;
-            case '"': tokens.push_back(makeToken(TokenType::DQuote, "\"", startLine, startColumn)); break;
             case '\'': tokens.push_back(makeToken(TokenType::SQuote, "'", startLine, startColumn)); break;
             case ',': tokens.push_back(makeToken(TokenType::Comma, ",", startLine, startColumn)); break;
             case '|': tokens.push_back(makeToken(TokenType::Pipe, "|", startLine, startColumn)); break;
@@ -125,7 +129,7 @@ std::vector<Token> Lexer::tokenize() {
     return tokens;
 }
 
-Token Lexer::makeToken(const TokenType type, const std::string& lexeme, int tokenLine, int tokenColumn) {
+Token Lexer::makeToken(const TokenType type, const std::string& lexeme, const int tokenLine, const int tokenColumn) {
     return Token{
         .type = type,
         .lexeme = lexeme,
@@ -153,6 +157,28 @@ Token Lexer::lexNumber() {
     };
 }
 
+Token Lexer::lexString() {
+    const int startLine = line;
+    const int startColumn = column;
+
+    advance();
+    const size_t start = position;
+
+    while (!isAtEnd() && peek() != '"') advance();
+
+    const std::string value = source.substr(start, position - start);
+
+    if (!isAtEnd()) advance();
+
+    return Token{
+        .type = TokenType::String,
+        .lexeme = value,
+        .line = startLine,
+        .column = startColumn
+
+    };
+}
+
 Token Lexer::lexIdentifierOrKeyword() {
     const int startLine = line;
     const int startColumn = column;
@@ -165,15 +191,15 @@ Token Lexer::lexIdentifierOrKeyword() {
     const std::string lexeme = source.substr(start, position - start);
 
     static const std::unordered_map<std::string, TokenType> keywords = {
-        {"machine",     TokenType::KwMachine},
-        {"if",          TokenType::KwIf},
-        {"else",        TokenType::KwElse},
-        {"for",         TokenType::KwFor},
-        {"while",       TokenType::KwWhile},
-        {"return",      TokenType::KwReturn},
-        {"break",       TokenType::KwBreak},
-        {"continue",    TokenType::KwContinue},
-        {"arch",        TokenType::KwArch},
+        {"machine",     TokenType::Machine},
+        {"if",          TokenType::If},
+        {"else",        TokenType::Else},
+        {"for",         TokenType::For},
+        {"while",       TokenType::While},
+        {"return",      TokenType::Return},
+        {"break",       TokenType::Break},
+        {"continue",    TokenType::Continue},
+        {"arch",        TokenType::Arch},
         {"register",    TokenType::Register},
         {"opcode",      TokenType::Opcode},
         {"int",         TokenType::Int},

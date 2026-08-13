@@ -46,7 +46,19 @@ std::string printExpression(Expression& expression) {
             return "(" + unary.operatorSymbol + " " + printExpression(*unary.operand) + ")";
         },
         [](const CallExpression &call) -> std::string {
-            return "";
+            std::string result = call.identifier + "(";
+            for (std::size_t i = 0; i < call.arguments.size(); ++i) {
+                result += printExpression(*call.arguments[i]);
+                if (i + 1 != call.arguments.size()) result += ", ";
+            }
+            result += ')';
+            return result;
+        },
+        [](const StringExpression &string) -> std::string {
+            return "\"" + string.value + "\"";
+        },
+        [](const TypeExpression &typeExpression) -> std::string {
+            return typeExpression.type.name;
         }
     }, expression);
 }
@@ -57,7 +69,10 @@ std::string printStatement(Statement& statement, const int indent) {
 
     return std::visit(Overloaded{
         [&](const AssignmentStatement &assignment) -> std::string {
-            return pad + assignment.target + " = " + printExpression(*assignment.value) + ";\n";
+            std::string result = pad;
+            if (assignment.dereference) result += '*';
+            result += assignment.target + " = " + printExpression(*assignment.value) + ";\n";
+            return result;
         },
         [&](const BlockStatement &block) -> std::string {
             return printBlockStatement(block, indent);
@@ -103,12 +118,14 @@ std::string printStatement(Statement& statement, const int indent) {
             + printBlockStatement(*functionDefinition.block, indent);
         },
         [&](const ExpressionStatement &expressionStatement) -> std::string {
-            return "expressionStatement";
+            return pad + printExpression(*expressionStatement.expression) + ";\n";
         },
         [&](const VariableDeclaration &variableDeclaration) -> std::string {
             std::string result = variableDeclaration.type.name;
             if (variableDeclaration.type.isPointer) result += '*';
-            result += variableDeclaration.identifier + " = " ;
+            result += " " + variableDeclaration.identifier;
+            if (variableDeclaration.initializer) result += " = " + printExpression(*variableDeclaration.initializer);
+            result += ";\n";
             return result;
         }
 

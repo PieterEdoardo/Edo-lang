@@ -5,6 +5,7 @@ enum class TokenType {
     // Literals
     Number,
     Identifier,
+    String,
 
     // Types
     Int,
@@ -16,15 +17,15 @@ enum class TokenType {
     Opcode,
 
     // Keywords
-    KwMachine,
-    KwArch,
-    KwIf,
-    KwElse,
-    KwWhile,
-    KwFor,
-    KwBreak,
-    KwContinue,
-    KwReturn,
+    Machine,
+    Arch,
+    If,
+    Else,
+    While,
+    For,
+    Break,
+    Continue,
+    Return,
 
     // Punctuation
     LParen,

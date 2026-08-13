@@ -20,11 +20,8 @@ private:
     bool isAtEnd() const;
 
     Token lexNumber();
+    Token lexString();
     Token lexIdentifierOrKeyword();
-
-    Token lexType();
-
-    static bool isType(const std::string& lexeme);
 
     static Token makeToken(TokenType type, const std::string& lexeme, int tokenLine, int tokenColumn);
 };
