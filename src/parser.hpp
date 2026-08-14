@@ -17,6 +17,8 @@ public:
 
     static bool isTypeToken(TokenType type);
 
+    static std::size_t byteSizeForType(TokenType type);
+
     const Token& expect(TokenType type, const std::string& message);
     [[nodiscard]] bool isAtEnd() const;
 
@@ -29,7 +31,7 @@ public:
     ExpressionPointer       parseComparison();
 
     // Calls
-    ParameterDefinition     parseParameters();
+    ParameterDefinition     parseParameters(bool useRegisters);
     std::vector<ExpressionPointer> parseArguments();
 
     StatementPointer        parseFunctionDefinition();
@@ -43,7 +45,7 @@ public:
     StatementPointer        parseStatement();
     StatementPointer        parseCallStatement();
 
-    TypeDefinition          parseTypeDefinition();
+    TypeDefinition          parseTypeDefinition(bool useRegisters);
 
     StatementPointer        parseIfStatement();
     StatementPointer        parseWhileStatement();

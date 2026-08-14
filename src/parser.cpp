@@ -56,6 +56,16 @@ bool Parser::isTypeToken(const TokenType type) {
            type == TokenType::Void;
 }
 
+std::size_t Parser::byteSizeForType(const TokenType type) {
+    switch (type) {
+        case TokenType::Char:   return 1;
+        case TokenType::Int:    return 8;
+        case TokenType::Void:   return 0;
+        default:
+            throw std::runtime_error("byteSizeForType called on a non-type token");
+    }
+}
+
 const Token & Parser::expect(const TokenType type, const std::string& message) {
     if (check(type)) {
         return advance();
@@ -136,37 +146,49 @@ StatementPointer Parser::parseStatement() {
     return parseAssignmentStatement();
 }
 
-TypeDefinition Parser::parseTypeDefinition() {
-    if (!isTypeToken(peek().type)) {
+TypeDefinition Parser::parseTypeDefinition(const bool useRegisters) {
+    bool isPointer = false;
+    bool isRegister = false;
+    Token typeTarget;
+
+    if (isTypeToken(peek().type)) {
+        typeTarget = advance();
+        if (check(TokenType::Star)) {
+            advance();
+            isPointer = true;
+        }
+    } else if (check(TokenType::Identifier) && useRegisters) {
+        // Assume register typing is used
+        typeTarget = expect(TokenType::Identifier, "register name");
+        isRegister = true;
+    } else {
         const Token& badToken = peek();
         throw std::runtime_error(
             "Parse error at line " + std::to_string(badToken.line) +
             ", column " + std::to_string(badToken.column) +
-            ": expected a type ('int', 'char', or 'void'), got \"" + badToken.lexeme + "\""
+            ": expected a type ('int', 'char', or 'void'), or user defined register, got \"" + badToken.lexeme + "\""
         );
     }
-    const Token& typeTarget = advance();
 
     return TypeDefinition{
         .name = typeTarget.lexeme,
-        .byteSize = 8
+        .isPointer = isPointer,
+        .isRegister = isRegister,
+        .byteSize = isRegister ? 0 : byteSizeForType(typeTarget.type)
     };
 }
 
-ParameterDefinition Parser::parseParameters() {
+ParameterDefinition Parser::parseParameters(const bool useRegisters) {
     expect(TokenType::LParen, "Expected '(' after machine statement identifier");
 
     std::vector<TypeDefinition> typeList;
     std::vector<std::string> identifierList;
 
     while (!check(TokenType::RParen)) {
-        TypeDefinition typeTarget = parseTypeDefinition();
+        TypeDefinition typeTarget = parseTypeDefinition(useRegisters);
         const Token& typeIdentifierTarget = expect(TokenType::Identifier, "identifier after type definition of parameter declaration");
 
-        typeList.push_back(TypeDefinition{
-            .name = typeTarget.name,
-            .byteSize = 8
-        });
+        typeList.push_back(std::move(typeTarget));
         identifierList.emplace_back(typeIdentifierTarget.lexeme);
 
         if (check(TokenType::Comma)) {
@@ -215,11 +237,11 @@ StatementPointer Parser::parseCallStatement() {
 }
 
 StatementPointer Parser::parseFunctionDefinition() {
-    TypeDefinition typeTarget = parseTypeDefinition();
+    TypeDefinition typeTarget = parseTypeDefinition(false);
 
     const Token token = expect(TokenType::Identifier, "identifier after function definition");
 
-    ParameterDefinition parameters = parseParameters();
+    ParameterDefinition parameters = parseParameters(false);
 
     const StatementPointer blockStatement = parseBlockStatement();
     auto block = std::make_unique<BlockStatement>(
@@ -240,7 +262,7 @@ StatementPointer Parser::parseMachineDefinition() {
 
     const Token& token = expect(TokenType::Identifier, "identifier after machine statement");
 
-    ParameterDefinition parameters = parseParameters();
+    ParameterDefinition parameters = parseParameters(true);
 
     const StatementPointer blockStatement = parseBlockStatement();
     auto block = std::make_unique<BlockStatement>(
@@ -255,7 +277,7 @@ StatementPointer Parser::parseMachineDefinition() {
 }
 
 StatementPointer Parser::parseVariableDeclaration() {
-    TypeDefinition typeTarget = parseTypeDefinition();
+    TypeDefinition typeTarget = parseTypeDefinition(false);
 
     if (check(TokenType::Star)) {
         advance();
@@ -515,23 +537,10 @@ ExpressionPointer Parser::parsePrimary() {
         return inner;
     }
 
-    if (check(TokenType::Int)) {
-        Token integerToken = advance();
+    if (isTypeToken(peek().type)) {
+        TypeDefinition type = parseTypeDefinition(false);
         return std::make_unique<Expression>(TypeExpression{
-            .type = TypeDefinition{
-                .name = std::move(integerToken.lexeme),
-                .byteSize = 8
-            }
-        });
-    }
-
-    if (check(TokenType::Char)) {
-        Token integerToken = advance();
-        return std::make_unique<Expression>(TypeExpression{
-            .type = TypeDefinition{
-                .name = std::move(integerToken.lexeme),
-                .byteSize = 1
-            }
+            .type = std::move(type)
         });
     }
 
@@ -545,6 +554,28 @@ ExpressionPointer Parser::parsePrimary() {
 // Operators
 
 ExpressionPointer Parser::parseUnary() {
+    bool isCast = false;
+    if (constexpr std::size_t offset = 1; position + offset < tokens.size() && isTypeToken(tokens[position + offset].type)) {
+        isCast = true;
+    }
+
+    if (check(TokenType::LParen) && isCast) {
+        bool isPointer = false;
+        advance();
+        TypeDefinition castType = parseTypeDefinition(false);
+        if (check(TokenType::Star)) {
+            isPointer = true;
+            advance();
+        }
+        expect(TokenType::RParen,"')' after cast type");
+        ExpressionPointer operand = parseUnary();
+
+        return std::make_unique<Expression>(CastExpression{
+            .type = std::move(castType),
+            .operand = std::move(operand)
+        });
+    }
+
     if (checkAny({TokenType::Not, TokenType::Ampersand, TokenType::Star})) {
         const Token& operatorToken = advance();
         ExpressionPointer operand = parseUnary();

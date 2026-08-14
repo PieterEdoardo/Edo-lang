@@ -59,6 +59,9 @@ std::string printExpression(Expression& expression) {
         },
         [](const TypeExpression &typeExpression) -> std::string {
             return typeExpression.type.name;
+        },
+        [](const CastExpression &castExpression) -> std::string {
+            return "(" + castExpression.type.name + (castExpression.type.isPointer ? "*" : "") + ")" + printExpression(*castExpression.operand);
         }
     }, expression);
 }

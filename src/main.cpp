@@ -8,10 +8,18 @@
 
 int main() {
     const std::string source =
+    "arch x86_64 {\n"
+    "register rax = register_x86_64_64_RAX,\n"
+    "register rdi = register_x86_64_64_RDI\n"
+    "}"
+    "machine test(rax x, rdi y) {\n"
+    "rax = rax + rdi;\n"
+    "}\n"
     "rax = 2 + 3 * 4 - 1;\n"
     "int* x = malloc(sizeof(int));\n"
     "*x = 55;\n"
     "int* y = &x;\n"
+    "void* z = (void*)rax;\n"
     "char* text = \"Hello World!\";\n"
     "if (rax == 13) {\n"
     "rdi = 4;\n"

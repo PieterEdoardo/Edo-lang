@@ -24,8 +24,9 @@ struct ExpressionStatement;
 struct VariableDeclaration;
 struct StringExpression;
 struct TypeExpression;
+struct CastExpression;
 
-using Expression = std::variant<NumberExpression, StringExpression, TypeExpression, IdentifierExpression, BinaryExpression, UnaryExpression, CallExpression>;
+using Expression = std::variant<NumberExpression, StringExpression, TypeExpression, IdentifierExpression, BinaryExpression, UnaryExpression, CastExpression, CallExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
 using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement, VariableDeclaration>;
 using StatementPointer = std::unique_ptr<Statement>;
@@ -33,6 +34,7 @@ using StatementPointer = std::unique_ptr<Statement>;
 struct TypeDefinition {
     std::string name;
     bool isPointer;
+    bool isRegister;
     std::size_t byteSize;
 };
 
@@ -56,6 +58,11 @@ struct NumberExpression {
 
 struct UnaryExpression {
     std::string operatorSymbol;
+    ExpressionPointer operand;
+};
+
+struct CastExpression {
+    TypeDefinition type;
     ExpressionPointer operand;
 };
 
