@@ -11,17 +11,18 @@ arch x86_64 {
     register rsi = registers_86_64_source_64_RSI,
     register rdx = registers_86_64_dataio_64_RDX
     register r8 = registers_86_64_R8
+    register r9 = registers_86_64_R9
 }
 
-machine print(char* text, int size) {
+machine print(r8 text, r9 size) {
     rax = 1;
     rdi = 1;
     rsi = text;
     rdx = size;
-    syscall();
+    syscall;
 }
 
-r8 = 5;
-print(r8, 1);
+rax = "Hello, World!\n"
+print (rax, 14);
 ```
 `> edoc example.edo --arch x86_64`
