@@ -75,6 +75,8 @@ enum class TokenType {
 
     // Error token
     Invalid,
+
+    // misc.
 };
 
 struct Token {

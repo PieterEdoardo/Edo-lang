@@ -77,12 +77,23 @@ std::vector<Token> Lexer::tokenize() {
             case '*': tokens.push_back(makeToken(TokenType::Star,       "*", startLine, startColumn)); break;
             case '%': tokens.push_back(makeToken(TokenType::Modulo,     "%", startLine, startColumn)); break;
             case '\\': tokens.push_back(makeToken(TokenType::BSlash,    "\\", startLine, startColumn)); break;
-            case '/': tokens.push_back(makeToken(TokenType::FSlash,     "/", startLine, startColumn)); break;
+
             case '\'': tokens.push_back(makeToken(TokenType::SQuote,    "'", startLine, startColumn)); break;
             case '.': tokens.push_back(makeToken(TokenType::Dot,        ".", startLine, startColumn)); break;
             case ',': tokens.push_back(makeToken(TokenType::Comma,      ",", startLine, startColumn)); break;
             case '|': tokens.push_back(makeToken(TokenType::Pipe,       "|", startLine, startColumn)); break;
             case '&': tokens.push_back(makeToken(TokenType::Ampersand,  "&", startLine, startColumn)); break;
+            case '/': {
+                if (peek() == '/') { // comments!
+                    while (character != '\n') {
+                        advance(); // Just skipping it.
+                    }
+                    advance();
+                } else {
+                    tokens.push_back(makeToken(TokenType::FSlash,     "/", startLine, startColumn));
+                }
+                break;
+            }
             case '=': {
                 if (peek() == '=') {
                     advance();

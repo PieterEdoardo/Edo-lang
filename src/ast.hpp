@@ -102,7 +102,7 @@ struct TypeExpression {
 struct FieldAccessExpression {
     ExpressionPointer target;
     std::string fieldName;
-    bool
+    bool isArrow; // false for '.' true for '->'
 };
 
 struct AssignmentStatement {
