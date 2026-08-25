@@ -21,20 +21,24 @@ struct MachineDefinition;
 struct FunctionDefinition;
 struct CallExpression;
 struct ExpressionStatement;
+struct ReturnStatement;
 struct VariableDeclaration;
 struct StringExpression;
 struct TypeExpression;
 struct CastExpression;
+struct StructDefinition;
+struct FieldAccessExpression;
+struct IndexExpression;
 
-using Expression = std::variant<NumberExpression, StringExpression, TypeExpression, IdentifierExpression, BinaryExpression, UnaryExpression, CastExpression, CallExpression>;
+using Expression = std::variant<NumberExpression, StringExpression, TypeExpression, IdentifierExpression, BinaryExpression, UnaryExpression, CastExpression, CallExpression, FieldAccessExpression, IndexExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement, VariableDeclaration>;
+using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, StructDefinition, ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement, ReturnStatement, VariableDeclaration>;
 using StatementPointer = std::unique_ptr<Statement>;
 
 struct TypeDefinition {
     std::string name;
     bool isPointer;
-    bool isRegister;
+    bool isUserDefined;
     std::size_t byteSize;
 };
 
@@ -44,7 +48,17 @@ struct VariableDeclaration {
     ExpressionPointer initializer;
 };
 
+struct StructDefinition {
+    std::string identifier;
+    std::vector<std::string> identifiers;
+    std::vector<TypeDefinition> types;
+};
+
 struct ExpressionStatement {
+    ExpressionPointer expression;
+};
+
+struct ReturnStatement {
     ExpressionPointer expression;
 };
 
@@ -83,6 +97,12 @@ struct CallExpression {
 
 struct TypeExpression {
     TypeDefinition type;
+};
+
+struct FieldAccessExpression {
+    ExpressionPointer target;
+    std::string fieldName;
+    bool
 };
 
 struct AssignmentStatement {

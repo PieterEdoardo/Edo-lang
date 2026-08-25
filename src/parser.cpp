@@ -117,6 +117,10 @@ StatementPointer Parser::parseStatement() {
         return parseWhileStatement();
     }
 
+    if (check(TokenType::Struct)) {
+        return parseStructDefinition();
+    }
+
     // if (check(TokenType::KwFor)) {
     //     return parseForStatement();
     // }
@@ -129,9 +133,9 @@ StatementPointer Parser::parseStatement() {
     //     return parseContinueStatement();
     // }
 
-    // if (check(TokenType::KwReturn)) {
-    //     return parseReturnStatement();
-    // }
+    if (check(TokenType::Return)) {
+        return parseReturnStatement();
+    }
 
 
     if (check(TokenType::LBrace)) {
@@ -173,7 +177,7 @@ TypeDefinition Parser::parseTypeDefinition(const bool useRegisters) {
     return TypeDefinition{
         .name = typeTarget.lexeme,
         .isPointer = isPointer,
-        .isRegister = isRegister,
+        .isUserDefined = isRegister,
         .byteSize = isRegister ? 0 : byteSizeForType(typeTarget.type)
     };
 }
@@ -286,6 +290,13 @@ StatementPointer Parser::parseVariableDeclaration() {
 
     const Token& identifierToken = expect(TokenType::Identifier, "identifier after type in declaration");
 
+    ExpressionPointer arraySize = nullptr;
+    if (check(TokenType::LBracket)) {
+        advance();
+        arraySize = parseExpression();
+        expect(TokenType::RBracket, "']' after array size");
+    }
+
     ExpressionPointer initializer = nullptr;
     if (check(TokenType::Equals)) {
         advance();
@@ -298,6 +309,32 @@ StatementPointer Parser::parseVariableDeclaration() {
         .type = std::move(typeTarget),
         .identifier = identifierToken.lexeme,
         .initializer = std::move(initializer)
+    });
+}
+
+StatementPointer Parser::parseStructDefinition() {
+    expect(TokenType::Struct, "struct definition at start of struct");
+    const Token& nameToken = expect(TokenType::Identifier, "struct definition at start of struct");
+    expect(TokenType::LBrace, "'{' at start of struct");
+
+    std::vector<std::string> identifiers;
+    std::vector<TypeDefinition> typeDefinitions;
+    while (!check(TokenType::RBrace)) {
+        TypeDefinition fieldType = parseTypeDefinition(false);
+        const std::string fieldName = expect(TokenType::Identifier, "identifier after type in struct member declaration").lexeme;
+        expect(TokenType::Semicolon, "';' after struct member declaration");
+
+        identifiers.push_back(fieldName);
+        typeDefinitions.push_back(std::move(fieldType));
+    }
+    advance();
+
+    expect(TokenType::Semicolon, "';' after declaration");
+
+    return std::make_unique<Statement>(StructDefinition{
+        .identifier = nameToken.lexeme,
+        .identifiers = std::move(identifiers),
+        .types = std::move(typeDefinitions),
     });
 }
 
@@ -416,6 +453,16 @@ StatementPointer Parser::parseBlockStatement() {
     expect(TokenType::RBrace, "Expected '}' at end of block statement.");
 
     return std::make_unique<Statement>(BlockStatement{std::move(statements)});
+}
+
+StatementPointer Parser::parseReturnStatement() {
+    expect(TokenType::Return, "Expected 'return' at start of return statement.");
+    ExpressionPointer expression = parseExpression();
+    expect(TokenType::Semicolon, "Expected ';' after return statement.");
+
+    return std::make_unique<Statement>(ReturnStatement{
+        .expression = std::move(expression),
+    });
 }
 
 ExpressionPointer Parser::parseComparison() {
@@ -552,7 +599,6 @@ ExpressionPointer Parser::parsePrimary() {
 }
 
 // Operators
-
 ExpressionPointer Parser::parseUnary() {
     bool isCast = false;
     if (constexpr std::size_t offset = 1; position + offset < tokens.size() && isTypeToken(tokens[position + offset].type)) {

@@ -57,21 +57,32 @@ std::vector<Token> Lexer::tokenize() {
         advance();
 
         switch (character) {
-            case '(': tokens.push_back(makeToken(TokenType::LParen, "(", startLine, startColumn)); break;
-            case ')': tokens.push_back(makeToken(TokenType::RParen, ")", startLine, startColumn)); break;
-            case '{': tokens.push_back(makeToken(TokenType::LBrace, "{", startLine, startColumn)); break;
-            case '}': tokens.push_back(makeToken(TokenType::RBrace, "}", startLine, startColumn)); break;
-            case ';': tokens.push_back(makeToken(TokenType::Semicolon, ";", startLine, startColumn)); break;
-            case '+': tokens.push_back(makeToken(TokenType::Plus, "+", startLine, startColumn)); break;
-            case '-': tokens.push_back(makeToken(TokenType::Minus, "-", startLine, startColumn)); break;
-            case '*': tokens.push_back(makeToken(TokenType::Star, "*", startLine, startColumn)); break;
-            case '%': tokens.push_back(makeToken(TokenType::Modulo, "%", startLine, startColumn)); break;
-            case '\\': tokens.push_back(makeToken(TokenType::BSlash, "\\", startLine, startColumn)); break;
-            case '/': tokens.push_back(makeToken(TokenType::FSlash, "/", startLine, startColumn)); break;
-            case '\'': tokens.push_back(makeToken(TokenType::SQuote, "'", startLine, startColumn)); break;
-            case ',': tokens.push_back(makeToken(TokenType::Comma, ",", startLine, startColumn)); break;
-            case '|': tokens.push_back(makeToken(TokenType::Pipe, "|", startLine, startColumn)); break;
-            case '&': tokens.push_back(makeToken(TokenType::Ampersand, "&", startLine, startColumn)); break;
+            case '(': tokens.push_back(makeToken(TokenType::LParen,     "(", startLine, startColumn)); break;
+            case ')': tokens.push_back(makeToken(TokenType::RParen,     ")", startLine, startColumn)); break;
+            case '{': tokens.push_back(makeToken(TokenType::LBrace,     "{", startLine, startColumn)); break;
+            case '}': tokens.push_back(makeToken(TokenType::RBrace,     "}", startLine, startColumn)); break;
+            case '[': tokens.push_back(makeToken(TokenType::RBracket,   "[", startLine, startColumn)); break;
+            case ']': tokens.push_back(makeToken(TokenType::LBracket,   "]", startLine, startColumn)); break;
+            case ';': tokens.push_back(makeToken(TokenType::Semicolon,  ";", startLine, startColumn)); break;
+            case '+': tokens.push_back(makeToken(TokenType::Plus,       "+", startLine, startColumn)); break;
+            case '-': {
+                if (peek() == '>') {
+                    advance();
+                    tokens.push_back(makeToken(TokenType::Arrow,        "->", startLine, startColumn));
+                } else {
+                    tokens.push_back(makeToken(TokenType::Minus,        "-", startLine, startColumn));
+                }
+                break;
+            }
+            case '*': tokens.push_back(makeToken(TokenType::Star,       "*", startLine, startColumn)); break;
+            case '%': tokens.push_back(makeToken(TokenType::Modulo,     "%", startLine, startColumn)); break;
+            case '\\': tokens.push_back(makeToken(TokenType::BSlash,    "\\", startLine, startColumn)); break;
+            case '/': tokens.push_back(makeToken(TokenType::FSlash,     "/", startLine, startColumn)); break;
+            case '\'': tokens.push_back(makeToken(TokenType::SQuote,    "'", startLine, startColumn)); break;
+            case '.': tokens.push_back(makeToken(TokenType::Dot,        ".", startLine, startColumn)); break;
+            case ',': tokens.push_back(makeToken(TokenType::Comma,      ",", startLine, startColumn)); break;
+            case '|': tokens.push_back(makeToken(TokenType::Pipe,       "|", startLine, startColumn)); break;
+            case '&': tokens.push_back(makeToken(TokenType::Ampersand,  "&", startLine, startColumn)); break;
             case '=': {
                 if (peek() == '=') {
                     advance();
@@ -192,6 +203,7 @@ Token Lexer::lexIdentifierOrKeyword() {
 
     static const std::unordered_map<std::string, TokenType> keywords = {
         {"machine",     TokenType::Machine},
+        {"syscall",     TokenType::Syscall},
         {"if",          TokenType::If},
         {"else",        TokenType::Else},
         {"for",         TokenType::For},
@@ -202,6 +214,7 @@ Token Lexer::lexIdentifierOrKeyword() {
         {"arch",        TokenType::Arch},
         {"register",    TokenType::Register},
         {"opcode",      TokenType::Opcode},
+        {"struct",      TokenType::Struct},
         {"int",         TokenType::Int},
         {"char",        TokenType::Char},
         {"void",        TokenType::Void},

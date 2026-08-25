@@ -130,6 +130,19 @@ std::string printStatement(Statement& statement, const int indent) {
             if (variableDeclaration.initializer) result += " = " + printExpression(*variableDeclaration.initializer);
             result += ";\n";
             return result;
+        },
+        [&](const StructDefinition &structDefinition) -> std::string {
+            std::string result = "struct " + structDefinition.identifier + " {\n";
+            for (std::size_t i = 0; i < structDefinition.identifiers.size(); ++i) {
+                result += "    " + structDefinition.types[i].name;
+                if (structDefinition.types[i].isPointer) result += '*';
+                result += " = " + structDefinition.identifiers[i] + ";\n";
+            }
+            result += "};\n";
+            return result;
+        },
+        [&](const ReturnStatement &returnStatement) -> std::string {
+            return "return " + printExpression(*returnStatement.expression) + ";\n";
         }
 
     }, statement);

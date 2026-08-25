@@ -22,46 +22,34 @@ public:
     const Token& expect(TokenType type, const std::string& message);
     [[nodiscard]] bool isAtEnd() const;
 
-    ExpressionPointer       parseExpression();
-    ExpressionPointer       parsePrimary();
-
-    // Grouped logic
-    StatementPointer        parseAssignmentStatement();
-    StatementPointer        parseBlockStatement();
-    ExpressionPointer       parseComparison();
-
-    // Calls
-    ParameterDefinition     parseParameters(bool useRegisters);
-    std::vector<ExpressionPointer> parseArguments();
-
-    StatementPointer        parseFunctionDefinition();
-    StatementPointer        parseMachineDefinition();
-
-    StatementPointer        parsePointerDeclaration();
-
-    StatementPointer        parseVariableDeclaration();
-
     // Statements
     StatementPointer        parseStatement();
     StatementPointer        parseCallStatement();
-
-    TypeDefinition          parseTypeDefinition(bool useRegisters);
-
+    StatementPointer        parseStructDefinition();
     StatementPointer        parseIfStatement();
     StatementPointer        parseWhileStatement();
-    StatementPointer        parseForStatement();
     StatementPointer        parseBreakStatement();
     StatementPointer        parseContinueStatement();
     StatementPointer        parseReturnStatement();
+    StatementPointer        parseArchMap();
+    StatementPointer        parseFunctionDefinition();
+    StatementPointer        parseMachineDefinition();
+    StatementPointer        parseAssignmentStatement();
+    StatementPointer        parseBlockStatement();
+    StatementPointer        parseVariableDeclaration();
 
-    // Operators
+    // Expressions
+    ExpressionPointer       parseExpression();
+    ExpressionPointer       parsePrimary();
     ExpressionPointer       parseUnary();
     ExpressionPointer       parseAdditive();
     ExpressionPointer       parseMultiplicative();
+    ExpressionPointer       parseComparison();
 
-
-    // Architecture
-    StatementPointer        parseArchMap();
+    // Grouped logic
+    TypeDefinition          parseTypeDefinition(bool useRegisters);
+    std::vector<ExpressionPointer> parseArguments();
+    ParameterDefinition     parseParameters(bool useRegisters);
 
 private:
     std::vector<Token> tokens; // internal

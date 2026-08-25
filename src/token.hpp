@@ -19,6 +19,7 @@ enum class TokenType {
     // Keywords
     Machine,
     Arch,
+    Syscall,
     If,
     Else,
     While,
@@ -26,6 +27,7 @@ enum class TokenType {
     Break,
     Continue,
     Return,
+    Struct,
 
     // Punctuation
     LParen,
@@ -66,6 +68,7 @@ enum class TokenType {
     NotEqual,
     LesserEqual,
     GreaterEqual,
+    Arrow,
 
     // End of stream
     EndOfFile,
