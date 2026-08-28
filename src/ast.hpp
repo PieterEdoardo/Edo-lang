@@ -46,6 +46,7 @@ struct VariableDeclaration {
     TypeDefinition type;
     std::string identifier;
     ExpressionPointer initializer;
+    ExpressionPointer arraySize;
 };
 
 struct StructDefinition {
@@ -105,9 +106,13 @@ struct FieldAccessExpression {
     bool isArrow; // false for '.' true for '->'
 };
 
+struct IndexExpression {
+    ExpressionPointer target;
+    ExpressionPointer index;
+};
+
 struct AssignmentStatement {
-    std::string target;
-    bool dereference;
+    ExpressionPointer target;
     ExpressionPointer value;
 };
 

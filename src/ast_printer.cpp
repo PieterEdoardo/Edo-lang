@@ -62,6 +62,12 @@ std::string printExpression(Expression& expression) {
         },
         [](const CastExpression &castExpression) -> std::string {
             return "(" + castExpression.type.name + (castExpression.type.isPointer ? "*" : "") + ")" + printExpression(*castExpression.operand);
+        },
+        [](const FieldAccessExpression &fieldAccess) -> std::string {
+            return printExpression(*fieldAccess.target) + (fieldAccess.isArrow ? "->" : ".") + fieldAccess.fieldName;
+        },
+        [](const IndexExpression &index) -> std::string {
+            return printExpression(*index.target) + "[" + printExpression(*index.index) + "]";
         }
     }, expression);
 }
@@ -72,10 +78,7 @@ std::string printStatement(Statement& statement, const int indent) {
 
     return std::visit(Overloaded{
         [&](const AssignmentStatement &assignment) -> std::string {
-            std::string result = pad;
-            if (assignment.dereference) result += '*';
-            result += assignment.target + " = " + printExpression(*assignment.value) + ";\n";
-            return result;
+            return pad + printExpression(*assignment.target) + " = " + printExpression(*assignment.value) + ";\n";
         },
         [&](const BlockStatement &block) -> std::string {
             return printBlockStatement(block, indent);
@@ -124,10 +127,15 @@ std::string printStatement(Statement& statement, const int indent) {
             return pad + printExpression(*expressionStatement.expression) + ";\n";
         },
         [&](const VariableDeclaration &variableDeclaration) -> std::string {
-            std::string result = variableDeclaration.type.name;
+            std::string result = pad + variableDeclaration.type.name;
             if (variableDeclaration.type.isPointer) result += '*';
             result += " " + variableDeclaration.identifier;
-            if (variableDeclaration.initializer) result += " = " + printExpression(*variableDeclaration.initializer);
+            if (variableDeclaration.arraySize) {
+                result += "[" + printExpression(*variableDeclaration.arraySize) + "]";
+            }
+            if (variableDeclaration.initializer) {
+                result += " = " + printExpression(*variableDeclaration.initializer);
+            }
             result += ";\n";
             return result;
         },

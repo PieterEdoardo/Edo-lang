@@ -19,6 +19,15 @@ int main() {
     "void* z;\n"
     "};\n"
 
+    "test->a = &y;\n"
+    "test.b = 4;\n"
+
+    "int numbers[100];\n"
+    "numbers[7] = 4;\n"
+
+    "void* pointers[100];\n"
+    "pointers[7] = malloc(100);\n"
+
     "machine test(rax x, rdi y) {\n"
     "rax = rax + rdi;\n"
     "}\n"

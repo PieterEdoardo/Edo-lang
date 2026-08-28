@@ -11,6 +11,9 @@ public:
     [[nodiscard]] const Token& peek() const;
     const Token& advance();
     [[nodiscard]] bool check(TokenType type) const;
+
+    bool checkAndPrint(TokenType type) const;
+
     [[nodiscard]] bool checkAhead(TokenType type, std::size_t offset) const;
 
     bool checkAny(std::initializer_list<TokenType> types) const;
@@ -18,6 +21,8 @@ public:
     static bool isTypeToken(TokenType type);
 
     static std::size_t byteSizeForType(TokenType type);
+
+    std::string lineContextUpTo(const Token &errorToken) const;
 
     const Token& expect(TokenType type, const std::string& message);
     [[nodiscard]] bool isAtEnd() const;
@@ -45,11 +50,12 @@ public:
     ExpressionPointer       parseAdditive();
     ExpressionPointer       parseMultiplicative();
     ExpressionPointer       parseComparison();
+    ExpressionPointer       parsePostfix();
 
     // Grouped logic
-    TypeDefinition          parseTypeDefinition(bool useRegisters);
+    TypeDefinition          parseTypeDefinition();
     std::vector<ExpressionPointer> parseArguments();
-    ParameterDefinition     parseParameters(bool useRegisters);
+    ParameterDefinition     parseParameters();
 
 private:
     std::vector<Token> tokens; // internal

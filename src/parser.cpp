@@ -33,6 +33,11 @@ bool Parser::check(const TokenType type) const {
     return peek().type == type;
 }
 
+bool Parser::checkAndPrint(const TokenType type) const {
+    std::cout << peek().lexeme;
+    return peek().type == type;
+}
+
 bool Parser::checkAhead(const TokenType type, const std::size_t offset) const {
     if (position + offset >= tokens.size()) {
         return false;
@@ -66,6 +71,20 @@ std::size_t Parser::byteSizeForType(const TokenType type) {
     }
 }
 
+std::string Parser::lineContextUpTo(const Token& errorToken) const {
+    std::string result;
+    for (const Token& token : tokens) {
+        if (token.line != errorToken.line) {
+            if (!result.empty()) break;
+            continue;
+        }
+        if (!result.empty()) result += ' ';
+        result += token.lexeme;
+        if (&token == &errorToken) break;
+    }
+    return result;
+}
+
 const Token & Parser::expect(const TokenType type, const std::string& message) {
     if (check(type)) {
         return advance();
@@ -73,20 +92,19 @@ const Token & Parser::expect(const TokenType type, const std::string& message) {
 
     const Token& token = peek();
     throw std::runtime_error(
-        "Parse error at line " + std::to_string(token.line) +
-        ", column " + std::to_string(token.column) +
-        ": expected '" + message + ", got \"" + token.lexeme + "\""
+        " Parse error at line " + std::to_string(token.line) +
+        ", column " + std::to_string(token.column) + ": \n" + lineContextUpTo(token) +
+        "\nexpected " + message + ", got \"" + token.lexeme + "\""
+
+
     );
 }
 
 StatementPointer Parser::parseStatement() {
-    // std::string result = isTypeToken(peek().type) ? "yes " : "no ";
-    // std::cout << result;
 
-    // std::cout << "token: \"" << peek().lexeme << "\" type=" << static_cast<int>(peek().type) << "\n";
-    // Typed declarations
-    if (isTypeToken(peek().type)) {
-        // std::cout << "test";
+
+    if (isTypeToken(peek().type) || check(TokenType::Identifier)) {
+
         std::size_t identifierOffset = 1;
         if (checkAhead(TokenType::Star, 1)) identifierOffset = 2;
 
@@ -99,12 +117,11 @@ StatementPointer Parser::parseStatement() {
         }
     }
 
-    // Double checks
     if (check(TokenType::Identifier) && checkAhead(TokenType::LParen, 1)) {
         return parseCallStatement();
     }
 
-    // Single checks
+    // Single statement checks
     if (check(TokenType::Machine)) {
         return parseMachineDefinition();
     }
@@ -142,7 +159,6 @@ StatementPointer Parser::parseStatement() {
         return parseBlockStatement();
     }
 
-    // Architecture
     if (check(TokenType::Arch)) {
         return parseArchMap();
     }
@@ -150,9 +166,9 @@ StatementPointer Parser::parseStatement() {
     return parseAssignmentStatement();
 }
 
-TypeDefinition Parser::parseTypeDefinition(const bool useRegisters) {
+TypeDefinition Parser::parseTypeDefinition() {
     bool isPointer = false;
-    bool isRegister = false;
+    bool isUserDefined = false;
     Token typeTarget;
 
     if (isTypeToken(peek().type)) {
@@ -161,10 +177,10 @@ TypeDefinition Parser::parseTypeDefinition(const bool useRegisters) {
             advance();
             isPointer = true;
         }
-    } else if (check(TokenType::Identifier) && useRegisters) {
+    } else if (check(TokenType::Identifier)) {
         // Assume register typing is used
         typeTarget = expect(TokenType::Identifier, "register name");
-        isRegister = true;
+        isUserDefined = true;
     } else {
         const Token& badToken = peek();
         throw std::runtime_error(
@@ -177,19 +193,19 @@ TypeDefinition Parser::parseTypeDefinition(const bool useRegisters) {
     return TypeDefinition{
         .name = typeTarget.lexeme,
         .isPointer = isPointer,
-        .isUserDefined = isRegister,
-        .byteSize = isRegister ? 0 : byteSizeForType(typeTarget.type)
+        .isUserDefined = isUserDefined,
+        .byteSize = isUserDefined ? 0 : byteSizeForType(typeTarget.type)
     };
 }
 
-ParameterDefinition Parser::parseParameters(const bool useRegisters) {
+ParameterDefinition Parser::parseParameters() {
     expect(TokenType::LParen, "Expected '(' after machine statement identifier");
 
     std::vector<TypeDefinition> typeList;
     std::vector<std::string> identifierList;
 
     while (!check(TokenType::RParen)) {
-        TypeDefinition typeTarget = parseTypeDefinition(useRegisters);
+        TypeDefinition typeTarget = parseTypeDefinition();
         const Token& typeIdentifierTarget = expect(TokenType::Identifier, "identifier after type definition of parameter declaration");
 
         typeList.push_back(std::move(typeTarget));
@@ -241,11 +257,11 @@ StatementPointer Parser::parseCallStatement() {
 }
 
 StatementPointer Parser::parseFunctionDefinition() {
-    TypeDefinition typeTarget = parseTypeDefinition(false);
+    TypeDefinition typeTarget = parseTypeDefinition();
 
     const Token token = expect(TokenType::Identifier, "identifier after function definition");
 
-    ParameterDefinition parameters = parseParameters(false);
+    ParameterDefinition parameters = parseParameters();
 
     const StatementPointer blockStatement = parseBlockStatement();
     auto block = std::make_unique<BlockStatement>(
@@ -266,7 +282,7 @@ StatementPointer Parser::parseMachineDefinition() {
 
     const Token& token = expect(TokenType::Identifier, "identifier after machine statement");
 
-    ParameterDefinition parameters = parseParameters(true);
+    ParameterDefinition parameters = parseParameters();
 
     const StatementPointer blockStatement = parseBlockStatement();
     auto block = std::make_unique<BlockStatement>(
@@ -281,7 +297,7 @@ StatementPointer Parser::parseMachineDefinition() {
 }
 
 StatementPointer Parser::parseVariableDeclaration() {
-    TypeDefinition typeTarget = parseTypeDefinition(false);
+    TypeDefinition typeTarget = parseTypeDefinition();
 
     if (check(TokenType::Star)) {
         advance();
@@ -308,7 +324,8 @@ StatementPointer Parser::parseVariableDeclaration() {
     return std::make_unique<Statement>(VariableDeclaration{
         .type = std::move(typeTarget),
         .identifier = identifierToken.lexeme,
-        .initializer = std::move(initializer)
+        .initializer = std::move(initializer),
+        .arraySize = std::move(arraySize)
     });
 }
 
@@ -320,7 +337,7 @@ StatementPointer Parser::parseStructDefinition() {
     std::vector<std::string> identifiers;
     std::vector<TypeDefinition> typeDefinitions;
     while (!check(TokenType::RBrace)) {
-        TypeDefinition fieldType = parseTypeDefinition(false);
+        TypeDefinition fieldType = parseTypeDefinition();
         const std::string fieldName = expect(TokenType::Identifier, "identifier after type in struct member declaration").lexeme;
         expect(TokenType::Semicolon, "';' after struct member declaration");
 
@@ -407,36 +424,17 @@ StatementPointer Parser::parseArchMap() {
     });
 }
 
-// Grouped logic
 StatementPointer Parser::parseAssignmentStatement() {
-    Token targetToken;
-    bool dereference = false;
-    if (check(TokenType::Star) && checkAhead(TokenType::Identifier, 1)) {
-        expect(TokenType::Star, "'*' operator at start of assignment statement");
-        targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
-        dereference = true;
-    } else if (check(TokenType::Identifier)) {
-        targetToken = expect(TokenType::Identifier, "identifier at start of assignment statement");
-    } else {
-        const Token& badToken = peek();
-        throw std::runtime_error(
-            "Parse error at line " + std::to_string(badToken.line) +
-            ", column " + std::to_string(badToken.column) +
-            ": expected identifier or '*identifier' at start of assignment statement, got \"" + badToken.lexeme + "\""
-        );
-    }
+    ExpressionPointer target = parseUnary();
 
-    const std::string targetName = targetToken.lexeme;
-
-    expect(TokenType::Equals, "Expected '=' after identifier in assignment statement.");
+    expect(TokenType::Equals, "'=' after assignment target");
 
     ExpressionPointer value = parseExpression();
 
-    expect(TokenType::Semicolon, "Expected ';' after assignment statement.");
+    expect(TokenType::Semicolon, "';' after assignment statement.");
 
     return std::make_unique<Statement>(AssignmentStatement{
-        .target = targetName,
-        .dereference = dereference,
+        .target = std::move(target),
         .value = std::move(value)
     });
 }
@@ -483,6 +481,40 @@ ExpressionPointer Parser::parseComparison() {
     }
 
     return left;
+}
+
+ExpressionPointer Parser::parsePostfix() {
+    ExpressionPointer expression = parsePrimary();
+
+    while (true) {
+        if (check(TokenType::Dot) || check(TokenType::Arrow)) {
+            const bool isArrow = check(TokenType::Arrow);
+            advance();
+            const Token& fieldToken = expect(TokenType::Identifier, "identifier after '.' or '->'");
+
+            expression = std::make_unique<Expression>(FieldAccessExpression{
+                .target = std::move(expression),
+                .fieldName = fieldToken.lexeme,
+                .isArrow = isArrow,
+            });
+            continue;
+        }
+
+        if (check(TokenType::LBracket)) {
+            advance();
+            ExpressionPointer indexValue = parseExpression();
+            expect(TokenType::RBracket, "']' after array index");
+
+            expression = std::make_unique<Expression>(IndexExpression{
+                .target = std::move(expression),
+                .index = std::move(indexValue)
+            });
+            continue;
+        }
+        break;
+    }
+
+    return expression;
 }
 
 // Statements
@@ -585,7 +617,7 @@ ExpressionPointer Parser::parsePrimary() {
     }
 
     if (isTypeToken(peek().type)) {
-        TypeDefinition type = parseTypeDefinition(false);
+        TypeDefinition type = parseTypeDefinition();
         return std::make_unique<Expression>(TypeExpression{
             .type = std::move(type)
         });
@@ -608,7 +640,7 @@ ExpressionPointer Parser::parseUnary() {
     if (check(TokenType::LParen) && isCast) {
         bool isPointer = false;
         advance();
-        TypeDefinition castType = parseTypeDefinition(false);
+        TypeDefinition castType = parseTypeDefinition();
         if (check(TokenType::Star)) {
             isPointer = true;
             advance();
@@ -632,7 +664,7 @@ ExpressionPointer Parser::parseUnary() {
         });
     }
 
-    return parsePrimary();
+    return parsePostfix();
 }
 
 ExpressionPointer Parser::parseMultiplicative() {
