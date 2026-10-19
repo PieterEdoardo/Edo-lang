@@ -68,6 +68,15 @@ std::string printExpression(Expression& expression) {
         },
         [](const IndexExpression &index) -> std::string {
             return printExpression(*index.target) + "[" + printExpression(*index.index) + "]";
+        },
+        [](const StructInitializerExpression &structInitializer) -> std::string {
+            std::string result = "{";
+            for (std::size_t i = 0; i < structInitializer.values.size(); ++i) {
+                result += printExpression(*structInitializer.values[i]);
+                if (i + 1 != structInitializer.values.size()) result += ", ";
+            }
+            result += "}";
+            return result;
         }
     }, expression);
 }
@@ -144,7 +153,7 @@ std::string printStatement(Statement& statement, const int indent) {
             for (std::size_t i = 0; i < structDefinition.identifiers.size(); ++i) {
                 result += "    " + structDefinition.types[i].name;
                 if (structDefinition.types[i].isPointer) result += '*';
-                result += " = " + structDefinition.identifiers[i] + ";\n";
+                result += " " + structDefinition.identifiers[i] + ";\n";
             }
             result += "};\n";
             return result;

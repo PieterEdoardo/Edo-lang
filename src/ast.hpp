@@ -27,12 +27,19 @@ struct StringExpression;
 struct TypeExpression;
 struct CastExpression;
 struct StructDefinition;
+struct StructInitializerExpression;
 struct FieldAccessExpression;
 struct IndexExpression;
 
-using Expression = std::variant<NumberExpression, StringExpression, TypeExpression, IdentifierExpression, BinaryExpression, UnaryExpression, CastExpression, CallExpression, FieldAccessExpression, IndexExpression>;
+using Expression = std::variant<
+    NumberExpression, StringExpression, TypeExpression, IdentifierExpression, BinaryExpression,
+    UnaryExpression, CastExpression, CallExpression, FieldAccessExpression, IndexExpression,
+    StructInitializerExpression>;
 using ExpressionPointer = std::unique_ptr<Expression>;
-using Statement = std::variant<AssignmentStatement, BlockStatement, IfStatement, WhileStatement, StructDefinition, ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement, ReturnStatement, VariableDeclaration>;
+using Statement = std::variant<
+    AssignmentStatement, BlockStatement, IfStatement, WhileStatement, StructDefinition,
+    ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement, ReturnStatement,
+    VariableDeclaration>;
 using StatementPointer = std::unique_ptr<Statement>;
 
 struct TypeDefinition {
@@ -53,6 +60,10 @@ struct StructDefinition {
     std::string identifier;
     std::vector<std::string> identifiers;
     std::vector<TypeDefinition> types;
+};
+
+struct StructInitializerExpression {
+    std::vector<ExpressionPointer> values;
 };
 
 struct ExpressionStatement {

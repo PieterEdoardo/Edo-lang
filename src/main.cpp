@@ -17,7 +17,11 @@ int main() {
     "int x;\n"
     "char* y;\n"
     "void* z;\n"
+    "linkedList* next;\n"
     "};\n"
+
+
+    "my_struct abc = {4, &a, &b, &c};\n"
 
     "test->a = &y;\n"
     "test.b = 4;\n"

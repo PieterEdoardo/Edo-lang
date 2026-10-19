@@ -51,6 +51,7 @@ public:
     ExpressionPointer       parseMultiplicative();
     ExpressionPointer       parseComparison();
     ExpressionPointer       parsePostfix();
+    ExpressionPointer       parseStructInitializer();
 
     // Grouped logic
     TypeDefinition          parseTypeDefinition();

@@ -178,8 +178,7 @@ TypeDefinition Parser::parseTypeDefinition() {
             isPointer = true;
         }
     } else if (check(TokenType::Identifier)) {
-        // Assume register typing is used
-        typeTarget = expect(TokenType::Identifier, "register name");
+        typeTarget = expect(TokenType::Identifier, "type name");
         isUserDefined = true;
     } else {
         const Token& badToken = peek();
@@ -188,6 +187,11 @@ TypeDefinition Parser::parseTypeDefinition() {
             ", column " + std::to_string(badToken.column) +
             ": expected a type ('int', 'char', or 'void'), or user defined register, got \"" + badToken.lexeme + "\""
         );
+    }
+
+    if (check(TokenType::Star)) {
+        advance();
+        isPointer = true;
     }
 
     return TypeDefinition{
@@ -316,7 +320,11 @@ StatementPointer Parser::parseVariableDeclaration() {
     ExpressionPointer initializer = nullptr;
     if (check(TokenType::Equals)) {
         advance();
-        initializer = parseExpression();
+        if (check(TokenType::LBrace)) {
+            initializer = parseStructInitializer();
+        } else {
+            initializer = parseExpression();
+        }
     }
 
     expect(TokenType::Semicolon, "';' after declaration");
@@ -352,6 +360,24 @@ StatementPointer Parser::parseStructDefinition() {
         .identifier = nameToken.lexeme,
         .identifiers = std::move(identifiers),
         .types = std::move(typeDefinitions),
+    });
+}
+
+ExpressionPointer Parser::parseStructInitializer() {
+    expect (TokenType::LBrace, "'{' at start of struct initializer");
+
+    std::vector<ExpressionPointer> values;
+    while (!check(TokenType::RBrace)) {
+        values.push_back(parseExpression());
+        if (check(TokenType::Comma)) {
+            advance();
+        }
+    }
+
+    expect(TokenType::RBrace, "'}' at end of struct initializer");
+
+    return std::make_unique<Expression>(StructInitializerExpression{
+        .values = std::move(values)
     });
 }
 
