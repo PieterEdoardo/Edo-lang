@@ -10,6 +10,7 @@ add_executable(edo_compiler
         src/lexer.cpp
         src/parser.cpp
         src/ast_printer.cpp
+        src/emitter.cpp
 )
 
 target_include_directories(edo_compiler PRIVATE src)
