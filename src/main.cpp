@@ -1,65 +1,33 @@
 #include <algorithm>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "ast_printer.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 
-int main() {
-    const std::string source =
-    "arch x86_64 {\n"
-    "register rax = register_x86_64_64_RAX,\n"
-    "register rdi = register_x86_64_64_RDI\n"
-    "}\n"
+static std::string readSourceFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("Could not open source file: " + path);
+    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
 
-    "struct my_struct {\n"
-    "int x;\n"
-    "char* y;\n"
-    "void* z;\n"
-    "linkedList* next;\n"
-    "};\n"
+int main(const int argumentCount, char** argumentValues) {
+    if (argumentCount < 2) {
+        std::cerr << "Usage: edo_compiler <file.edo>" << std::endl;
+        return 1;
+    }
 
-
-    "my_struct abc = {4, &a, &b, &c};\n"
-
-    "test->a = &y;\n"
-    "test.b = 4;\n"
-
-    "int numbers[100];\n"
-    "numbers[7] = 4;\n"
-
-    "void* pointers[100];\n"
-    "pointers[7] = malloc(100);\n"
-
-    "machine test(rax x, rdi y) {\n"
-    "rax = rax + rdi;\n"
-    "}\n"
-
-    "int foobar() {\n"
-    "return foo(bar(234)) + 67;\n"
-    "}\n"
-
-    "rax = 2 + 3 * 4 - 1;\n"
-    "int* x = malloc(sizeof(int));\n"
-    "*x = 55;\n"
-    "int* y = &x;\n"
-    "void* z = (void*)rax;\n"
-    "void* a = (void*)test(rax, rdi);\n"
-    "char* text = \"Hello World!\";\n"
-    "if (rax == 13) {\n"
-    "rdi = 4;\n"
-    "test(rax, rdi);\n"
-    "exit();\n"
-    "} else if (rax == 0) {\n"
-    "rdi = 6;\n"
-    "} else {\n"
-    "rdi = 7;\n"
-    "}\n";
+    const std::string source = readSourceFile(std::string(argumentValues[1]));
 
     Lexer lexer(source);
     const std::vector<Token> tokens = lexer.tokenize();
-
     Parser parser(tokens);
 
     while (!parser.isAtEnd()) {

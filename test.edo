@@ -1,0 +1,48 @@
+arch x86_64 {
+    register rax = register_x86_64_64_RAX,
+    register rdi = register_x86_64_64_RDI
+}
+
+struct my_struct {
+    int x;
+    char* y;
+    void* z;
+    linkedList* next;
+};
+
+my_struct abc = {4, &a, &b, &c};
+
+test->a = &y;
+test.b = 4;
+
+int numbers[100];
+numbers[7] = 4;
+
+void* pointers[100];
+pointers[7] = malloc(100);
+
+machine test(rax x, rdi y) {
+    rax = rax + rdi;
+}
+
+int foobar() {
+    return foo(bar(234)) + 67;
+}
+
+rax = 2 + 3 * 4 - 1;
+int* x = malloc(sizeof(int));
+*x = 55;
+int* y = &x;
+void* z = (void*)rax;
+void* a = (void*)test(rax, rdi);
+char* text = "Hello World!";
+
+if (rax == 13) {
+    rdi = 4;
+    test(rax, rdi);
+    exit();
+} else if (rax == 0) {
+    rdi = 6;
+} else {
+    rdi = 7;
+}
