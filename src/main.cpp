@@ -44,6 +44,28 @@ int main() {
         expectBytes("mov r8, 1", emitter.bytes,
             {0x49,0xC7,0xC0,0x01,0x00,0x00,0x00});
     }
+
+
+    {
+        Emitter emitter;
+        emitter.emitMoveRegister(PhysicalRegister::Rax, PhysicalRegister::Rbx);
+        expectBytes("mov rax, rbx", emitter.bytes, {0x48, 0x89, 0xD8});
+    }
+    {
+        Emitter emitter;
+        emitter.emitMoveRegister(PhysicalRegister::R8, PhysicalRegister::R9);
+        expectBytes("mov r8, r9", emitter.bytes, {0x4D, 0x89, 0xC8});
+    }
+    {
+        Emitter emitter;
+        emitter.emitMoveRegister(PhysicalRegister::R11, PhysicalRegister::Rax);
+        expectBytes("mov r11, rax", emitter.bytes, {0x49, 0x89, 0xC3});
+    }
+    {
+        Emitter emitter;
+        emitter.emitMoveRegister(PhysicalRegister::Rax, PhysicalRegister::R11);
+        expectBytes("mov rax, r11", emitter.bytes, {0x4C, 0x89, 0xD8});
+    }
 }
 // static std::string readSourceFile(const std::string& path) {
 //     std::ifstream file(path);

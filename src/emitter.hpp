@@ -14,5 +14,6 @@ public:
     void emitByte(uint8_t value);
     void emitUnsigned32(std::uint32_t value);
     void emitMoveImmediate(PhysicalRegister destination, std::int32_t value);
+    void emitMoveRegister(PhysicalRegister destination, PhysicalRegister source);
     void emitSyscall();
 };
