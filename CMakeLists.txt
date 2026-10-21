@@ -11,6 +11,7 @@ add_executable(edo_compiler
         src/parser.cpp
         src/ast_printer.cpp
         src/emitter.cpp
+        src/elf_writer.cpp
 )
 
 target_include_directories(edo_compiler PRIVATE src)

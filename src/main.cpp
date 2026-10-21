@@ -5,6 +5,7 @@
 #include <string>
 
 #include "ast_printer.hpp"
+#include "elf_writer.hpp"
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "emitter.hpp"
@@ -65,6 +66,14 @@ int main() {
         Emitter emitter;
         emitter.emitMoveRegister(PhysicalRegister::Rax, PhysicalRegister::R11);
         expectBytes("mov rax, r11", emitter.bytes, {0x4C, 0x89, 0xD8});
+    }
+
+    {
+        Emitter emitter;
+        emitter.emitMoveImmediate(PhysicalRegister::Rdi, 42);
+        emitter.emitMoveImmediate(PhysicalRegister::Rax, 60);
+        emitter.emitSyscall();
+        writeElfExecutable("exit42", emitter.bytes);
     }
 }
 // static std::string readSourceFile(const std::string& path) {
