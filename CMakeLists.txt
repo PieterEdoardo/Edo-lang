@@ -12,6 +12,8 @@ add_executable(edo_compiler
         src/ast_printer.cpp
         src/emitter.cpp
         src/elf_writer.cpp
+        src/
+        src/code_generator.cpp
 )
 
 target_include_directories(edo_compiler PRIVATE src)

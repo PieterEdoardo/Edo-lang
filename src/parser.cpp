@@ -126,6 +126,10 @@ StatementPointer Parser::parseStatement() {
         return parseMachineDefinition();
     }
 
+    if (check(TokenType::Syscall)) {
+        return parseSyscallStatement();
+    }
+
     if (check(TokenType::If)) {
         return parseIfStatement();
     }
@@ -298,6 +302,12 @@ StatementPointer Parser::parseMachineDefinition() {
         .parameters = std::move(parameters),
         .block = std::move(block)
     });
+}
+
+StatementPointer Parser::parseSyscallStatement() {
+    expect(TokenType::Syscall, "'syscall' at start of syscall statement");
+    expect(TokenType::Semicolon, "';' after syscall");
+    return std::make_unique<Statement>(SyscallStatement{});
 }
 
 StatementPointer Parser::parseVariableDeclaration() {

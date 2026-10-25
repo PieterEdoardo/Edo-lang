@@ -126,6 +126,9 @@ std::string printStatement(Statement& statement, const int indent) {
             + printParameters(machineDefinition.parameters) + " "
             + printBlockStatement(*machineDefinition.block, indent);
         },
+        [&](const SyscallStatement &) -> std::string {
+            return pad + "syscall;\n";
+        },
         [&](const FunctionDefinition &functionDefinition) -> std::string {
             return functionDefinition.type.name + " "
             + functionDefinition.identifier + " "

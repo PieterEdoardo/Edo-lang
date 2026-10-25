@@ -28,81 +28,83 @@ static void expectBytes(const char* label,
     }
 }
 
-int main() {
-    {
-        Emitter emitter;
-        emitter.emitMoveImmediate(PhysicalRegister::Rdi, 42);
-        emitter.emitMoveImmediate(PhysicalRegister::Rax, 60);
-        emitter.emitSyscall();
-        expectBytes("exit(42)", emitter.bytes,
-            {0x48,0xC7,0xC7,0x2A,0x00,0x00,0x00,
-             0x48,0xC7,0xC0,0x3C,0x00,0x00,0x00,
-             0x0F,0x05});
+static std::string readSourceFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file) {
+        throw std::runtime_error("Could not open source file: " + path);
     }
-    {
-        Emitter emitter;
-        emitter.emitMoveImmediate(PhysicalRegister::R8, 1);
-        expectBytes("mov r8, 1", emitter.bytes,
-            {0x49,0xC7,0xC0,0x01,0x00,0x00,0x00});
-    }
-
-
-    {
-        Emitter emitter;
-        emitter.emitMoveRegister(PhysicalRegister::Rax, PhysicalRegister::Rbx);
-        expectBytes("mov rax, rbx", emitter.bytes, {0x48, 0x89, 0xD8});
-    }
-    {
-        Emitter emitter;
-        emitter.emitMoveRegister(PhysicalRegister::R8, PhysicalRegister::R9);
-        expectBytes("mov r8, r9", emitter.bytes, {0x4D, 0x89, 0xC8});
-    }
-    {
-        Emitter emitter;
-        emitter.emitMoveRegister(PhysicalRegister::R11, PhysicalRegister::Rax);
-        expectBytes("mov r11, rax", emitter.bytes, {0x49, 0x89, 0xC3});
-    }
-    {
-        Emitter emitter;
-        emitter.emitMoveRegister(PhysicalRegister::Rax, PhysicalRegister::R11);
-        expectBytes("mov rax, r11", emitter.bytes, {0x4C, 0x89, 0xD8});
-    }
-
-    {
-        Emitter emitter;
-        emitter.emitMoveImmediate(PhysicalRegister::Rdi, 42);
-        emitter.emitMoveImmediate(PhysicalRegister::Rax, 60);
-        emitter.emitSyscall();
-        writeElfExecutable("exit42", emitter.bytes);
-    }
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
 }
-// static std::string readSourceFile(const std::string& path) {
-//     std::ifstream file(path);
-//     if (!file) {
-//         throw std::runtime_error("Could not open source file: " + path);
+
+int main(const int argumentCount, char** argumentValues) {
+    if (argumentCount < 2) {
+        std::cerr << "Usage: edo_compiler <file.edo>" << std::endl;
+        return 1;
+    }
+
+    const std::string source = readSourceFile(std::string(argumentValues[1]));
+
+    Lexer lexer(source);
+    const std::vector<Token> tokens = lexer.tokenize();
+    Parser parser(tokens);
+
+    while (!parser.isAtEnd()) {
+        StatementPointer statement = parser.parseStatement();
+        std::cout << printStatement(*statement);
+    }
+
+    // writeElfExecutable("out", emitter.bytes);
+
+    return 0;
+}
+
+// int main() {
+//     {
+//         Emitter emitter;
+//         emitter.emitMoveImmediate(PhysicalRegister::Rdi, 42);
+//         emitter.emitMoveImmediate(PhysicalRegister::Rax, 60);
+//         emitter.emitSyscall();
+//         expectBytes("exit(42)", emitter.bytes,
+//             {0x48,0xC7,0xC7,0x2A,0x00,0x00,0x00,
+//              0x48,0xC7,0xC0,0x3C,0x00,0x00,0x00,
+//              0x0F,0x05});
 //     }
-//     std::stringstream buffer;
-//     buffer << file.rdbuf();
-//     return buffer.str();
-// }
+//     {
+//         Emitter emitter;
+//         emitter.emitMoveImmediate(PhysicalRegister::R8, 1);
+//         expectBytes("mov r8, 1", emitter.bytes,
+//             {0x49,0xC7,0xC0,0x01,0x00,0x00,0x00});
+//     }
 //
-// int main(const int argumentCount, char** argumentValues) {
-    // if (argumentCount < 2) {
-    //     std::cerr << "Usage: edo_compiler <file.edo>" << std::endl;
-    //     return 1;
-    // }
-
-
-    // const std::string source = readSourceFile(std::string(argumentValues[1]));
-    //
-    // Lexer lexer(source);
-    // const std::vector<Token> tokens = lexer.tokenize();
-    // Parser parser(tokens);
-    //
-    // while (!parser.isAtEnd()) {
-    //     StatementPointer statement = parser.parseStatement();
-    //     std::cout << printStatement(*statement);
-    // }
-
-    // return 0;
+//
+//     {
+//         Emitter emitter;
+//         emitter.emitMoveRegister(PhysicalRegister::Rax, PhysicalRegister::Rbx);
+//         expectBytes("mov rax, rbx", emitter.bytes, {0x48, 0x89, 0xD8});
+//     }
+//     {
+//         Emitter emitter;
+//         emitter.emitMoveRegister(PhysicalRegister::R8, PhysicalRegister::R9);
+//         expectBytes("mov r8, r9", emitter.bytes, {0x4D, 0x89, 0xC8});
+//     }
+//     {
+//         Emitter emitter;
+//         emitter.emitMoveRegister(PhysicalRegister::R11, PhysicalRegister::Rax);
+//         expectBytes("mov r11, rax", emitter.bytes, {0x49, 0x89, 0xC3});
+//     }
+//     {
+//         Emitter emitter;
+//         emitter.emitMoveRegister(PhysicalRegister::Rax, PhysicalRegister::R11);
+//         expectBytes("mov rax, r11", emitter.bytes, {0x4C, 0x89, 0xD8});
+//     }
+//
+//     {
+//         Emitter emitter;
+//         emitter.emitMoveImmediate(PhysicalRegister::Rdi, 42);
+//         emitter.emitMoveImmediate(PhysicalRegister::Rax, 60);
+//         emitter.emitSyscall();
+//         writeElfExecutable("exit42", emitter.bytes);
+//     }
 // }

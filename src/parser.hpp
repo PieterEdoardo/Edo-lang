@@ -42,6 +42,7 @@ public:
     StatementPointer        parseAssignmentStatement();
     StatementPointer        parseBlockStatement();
     StatementPointer        parseVariableDeclaration();
+    StatementPointer        parseSyscallStatement();
 
     // Expressions
     ExpressionPointer       parseExpression();

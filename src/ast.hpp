@@ -30,6 +30,7 @@ struct StructDefinition;
 struct StructInitializerExpression;
 struct FieldAccessExpression;
 struct IndexExpression;
+struct SyscallStatement;
 
 using Expression = std::variant<
     NumberExpression, StringExpression, TypeExpression, IdentifierExpression, BinaryExpression,
@@ -39,7 +40,7 @@ using ExpressionPointer = std::unique_ptr<Expression>;
 using Statement = std::variant<
     AssignmentStatement, BlockStatement, IfStatement, WhileStatement, StructDefinition,
     ArchMap, MachineDefinition, FunctionDefinition, ExpressionStatement, ReturnStatement,
-    VariableDeclaration>;
+    VariableDeclaration, SyscallStatement>;
 using StatementPointer = std::unique_ptr<Statement>;
 
 struct TypeDefinition {
@@ -48,6 +49,8 @@ struct TypeDefinition {
     bool isUserDefined;
     std::size_t byteSize;
 };
+
+struct SyscallStatement {};
 
 struct VariableDeclaration {
     TypeDefinition type;
