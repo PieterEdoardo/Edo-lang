@@ -44,19 +44,20 @@ int main(const int argumentCount, char** argumentValues) {
         return 1;
     }
 
-    const std::string source = readSourceFile(std::string(argumentValues[1]));
+    const std::string sourcecode = readSourceFile(std::string(argumentValues[1]));
 
-    Lexer lexer(source);
+    Lexer lexer(sourcecode);
     const std::vector<Token> tokens = lexer.tokenize();
     Parser parser(tokens);
 
+    Emitter emitter;
     while (!parser.isAtEnd()) {
         StatementPointer statement = parser.parseStatement();
         std::cout << printStatement(*statement);
+        emitter.emitStatement(*statement);
     }
 
-    // writeElfExecutable("out", emitter.bytes);
-
+    writeElfExecutable("out", emitter.bytes);
     return 0;
 }
 
