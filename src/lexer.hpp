@@ -20,6 +20,9 @@ private:
     bool isAtEnd() const;
 
     Token lexNumber();
+
+    static char decodeEscape(char escapeCharacter);
+
     Token lexString();
     Token lexIdentifierOrKeyword();
 

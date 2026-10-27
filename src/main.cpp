@@ -18,16 +18,6 @@ static void printHex(const std::vector<std::uint8_t>& bytes) {
     std::printf("\n");
 }
 
-static void expectBytes(const char* label,
-                        const std::vector<std::uint8_t>& actual,
-                        const std::vector<std::uint8_t>& expected) {
-    std::cout << label << ": " << (actual == expected ? "PASS" : "FAIL") << "\n";
-    if (actual != expected) {
-        std::printf("  expected: "); printHex(expected);
-        std::printf("  actual:   "); printHex(actual);
-    }
-}
-
 static std::string readSourceFile(const std::string& path) {
     std::ifstream file(path);
     if (!file) {
@@ -49,18 +39,32 @@ int main(const int argumentCount, char** argumentValues) {
     Lexer lexer(sourcecode);
     const std::vector<Token> tokens = lexer.tokenize();
     Parser parser(tokens);
+        Emitter emitter;
 
-    Emitter emitter;
-    while (!parser.isAtEnd()) {
-        StatementPointer statement = parser.parseStatement();
-        std::cout << printStatement(*statement);
-        emitter.emitStatement(*statement);
+    try {
+        while (!parser.isAtEnd()) {
+            StatementPointer statement = parser.parseStatement();
+            std::cout << printStatement(*statement);
+            emitter.emitStatement(*statement);
+        }
+    } catch (std::exception& error) {
+        std::cerr << error.what() << std::endl;
+        return 1;
     }
 
     writeElfExecutable("out", emitter.bytes);
     return 0;
 }
 
+// static void expectBytes(const char* label,
+//                         const std::vector<std::uint8_t>& actual,
+//                         const std::vector<std::uint8_t>& expected) {
+//     std::cout << label << ": " << (actual == expected ? "PASS" : "FAIL") << "\n";
+//     if (actual != expected) {
+//         std::printf("  expected: "); printHex(expected);
+//         std::printf("  actual:   "); printHex(actual);
+//     }
+// }
 // int main() {
 //     {
 //         Emitter emitter;

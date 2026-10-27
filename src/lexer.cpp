@@ -1,5 +1,6 @@
 #include "lexer.hpp"
 #include <cctype>
+#include <stdexcept>
 #include <unordered_map>
 
 Lexer::Lexer(std::string source) : source(std::move(source)) {}
@@ -186,9 +187,18 @@ Token Lexer::lexString() {
     advance();
     const size_t start = position;
 
+
+
     while (!isAtEnd() && peek() != '"') advance();
 
-    const std::string value = source.substr(start, position - start);
+    std::string value = source.substr(start, position - start);
+
+    if (peek() == '\\') {
+        advance();
+        value += decodeEscape(advance());
+    } else {
+        value += advance();
+    }
 
     if (!isAtEnd()) advance();
 
@@ -246,5 +256,19 @@ Token Lexer::lexIdentifierOrKeyword() {
         .line = startLine,
         .column = startColumn
     };
+}
+
+char Lexer::decodeEscape(const char escapeCharacter) {
+    switch (escapeCharacter) {
+        case 'n': return '\n';
+        case 't': return '\t';
+        case 'r': return '\r';
+        case '0': return '\0';
+        case '\\': return '\\';
+        case '"': return '"';
+        case '\'': return '\'';
+        default:
+            throw std::logic_error(std::string("Unknown escape sequence: \\") + escapeCharacter);
+    }
 }
 
