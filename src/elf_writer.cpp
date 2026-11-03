@@ -11,7 +11,7 @@ namespace {
     constexpr std::uint64_t elfHeaderSize = 64;
     constexpr std::uint64_t programHeaderSize = 56;
     constexpr std::uint64_t programHeaderCount = 2;
-    constexpr std::uint64_t codeOffset = elfHeaderSize + programHeaderSize;
+    constexpr std::uint64_t codeOffset = elfHeaderSize + (programHeaderSize * programHeaderCount);
 
     void appendLittleEndian(std::vector<std::uint8_t>& bytes, const std::uint64_t value, const int byteCount) {
         for (int index = 0; index < byteCount; ++index) {
