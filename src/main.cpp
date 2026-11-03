@@ -52,7 +52,7 @@ int main(const int argumentCount, char** argumentValues) {
         return 1;
     }
 
-    writeElfExecutable("out", emitter.bytes);
+    writeElfExecutable("out", emitter.finish());
     return 0;
 }
 

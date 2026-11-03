@@ -187,17 +187,16 @@ Token Lexer::lexString() {
     advance();
     const size_t start = position;
 
-
-
-    while (!isAtEnd() && peek() != '"') advance();
-
     std::string value = source.substr(start, position - start);
 
-    if (peek() == '\\') {
-        advance();
-        value += decodeEscape(advance());
-    } else {
-        value += advance();
+    while (!isAtEnd() && peek() != '"') {
+        if (peek() == '\\') {
+            advance();
+            if (isAtEnd()) break;
+            value += decodeEscape(advance());
+        } else {
+            value += advance();
+        }
     }
 
     if (!isAtEnd()) advance();
@@ -207,7 +206,6 @@ Token Lexer::lexString() {
         .lexeme = value,
         .line = startLine,
         .column = startColumn
-
     };
 }
 

@@ -48,6 +48,13 @@ namespace {
             return;
         }
 
+        // strtbl
+        if (const auto* text = std::get_if<StringExpression>(assignment.value.get())) {
+            const std::size_t dataOffset = emitter.addString(text->value);
+            emitter.emitLoadAddress(*destination, dataOffset);
+            return;
+        }
+
         // reg assignment
         if (const auto* sourceIdentifier = std::get_if<IdentifierExpression>(assignment.value.get())) {
             const std::optional<PhysicalRegister> source = registerFromName(sourceIdentifier->name);
@@ -105,5 +112,43 @@ void Emitter::emitMoveRegister(const PhysicalRegister destination, const Physica
 void Emitter::emitSyscall() {
     emitByte(0x0F);
     emitByte(0x05);
+}
+
+void Emitter::emitLoadAddress(PhysicalRegister destination, std::size_t dataOffset) {
+    const auto destinationNumber = static_cast<std::uint8_t>(destination);
+    emitByte(0x48 | ((destinationNumber >> 3) << 2));
+    emitByte(0x8D);
+    emitByte(0b00000101 | ((destinationNumber & 0b111) << 3));
+    fixups.push_back(DataFixup{
+        .displacementOffset = bytes.size(),
+        .dataOffset = dataOffset
+    });
+    emitUnsigned32(0);
+}
+
+std::size_t Emitter::addString(const std::string &text) {
+    const std::size_t offset = data.size();
+    for (const char character : text) {
+        data.push_back(static_cast<std::uint8_t>(character));
+    }
+    data.push_back(0);
+    return offset;
+}
+
+std::vector<std::uint8_t> Emitter::finish() const {
+    std::vector<std::uint8_t> image = bytes;
+    const std::size_t codeSize = bytes.size();
+
+    for (const DataFixup& fixup : fixups) {
+        const std::size_t instructionEnd = fixup.displacementOffset + 4;
+        const auto displacement = static_cast<std::int32_t>(static_cast<std::int64_t>(codeSize + fixup.dataOffset) - static_cast<std::int64_t>(instructionEnd));
+
+        for (int index = 0; index < 4; index++) {
+            image[fixup.displacementOffset + index] = static_cast<std::uint8_t>((static_cast<std::uint32_t>(displacement) >> (index * 8)) & 0xFF);
+        }
+    }
+
+    image.insert(image.end(), data.begin(), data.end());
+    return image;
 }
 

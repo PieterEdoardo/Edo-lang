@@ -10,6 +10,7 @@ namespace {
     constexpr std::uint64_t loadAddress = 0x400000;
     constexpr std::uint64_t elfHeaderSize = 64;
     constexpr std::uint64_t programHeaderSize = 56;
+    constexpr std::uint64_t programHeaderCount = 2;
     constexpr std::uint64_t codeOffset = elfHeaderSize + programHeaderSize;
 
     void appendLittleEndian(std::vector<std::uint8_t>& bytes, const std::uint64_t value, const int byteCount) {
@@ -39,10 +40,23 @@ void writeElfExecutable(const std::string& outputPath, const std::vector<std::ui
     appendLittleEndian(file, 0, 4);                       // flags
     appendLittleEndian(file, elfHeaderSize, 2);           // this header's size
     appendLittleEndian(file, programHeaderSize, 2);       // size of one program header
-    appendLittleEndian(file, 1, 2);                       // number of program headers
+    appendLittleEndian(file, programHeaderCount, 2);                       // number of program headers
     appendLittleEndian(file, 64, 2);                      // section header size (unused)
     appendLittleEndian(file, 0, 2);                       // number of section headers
     appendLittleEndian(file, 0, 2);                       // section name table index
+
+    // src/elf_writer.cpp — inside writeElfExecutable, after the existing program header
+    // and the "number of program headers" field in the ELF header updated to 2
+
+    // ---- Program header 2: PT_GNU_STACK — mark the stack non-executable ----
+    appendLittleEndian(file, 0x6474E551, 4);  // p_type: PT_GNU_STACK
+    appendLittleEndian(file, 6, 4);           // p_flags: R + W, no X
+    appendLittleEndian(file, 0, 8);           // p_offset
+    appendLittleEndian(file, 0, 8);           // p_vaddr
+    appendLittleEndian(file, 0, 8);           // p_paddr
+    appendLittleEndian(file, 0, 8);           // p_filesz
+    appendLittleEndian(file, 0, 8);           // p_memsz
+    appendLittleEndian(file, 0x1000, 8);      // p_align
 
     // ---- Program header (56 bytes) ----
     const std::uint64_t totalSize = codeOffset + code.size();
