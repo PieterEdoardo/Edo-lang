@@ -114,7 +114,7 @@ void Emitter::emitSyscall() {
     emitByte(0x05);
 }
 
-void Emitter::emitLoadAddress(PhysicalRegister destination, std::size_t dataOffset) {
+void Emitter::emitLoadAddress(PhysicalRegister destination, const std::size_t dataOffset) {
     const auto destinationNumber = static_cast<std::uint8_t>(destination);
     emitByte(0x48 | ((destinationNumber >> 3) << 2));
     emitByte(0x8D);
@@ -126,6 +126,14 @@ void Emitter::emitLoadAddress(PhysicalRegister destination, std::size_t dataOffs
     emitUnsigned32(0);
 }
 
+void Emitter::emitSubtractImmediate(PhysicalRegister destination, std::int32_t value) {
+    const auto registerNumber = static_cast<std::uint8_t>(destination);
+    emitByte(0x48 | (registerNumber >> 3));
+    emitByte(0x81);
+    emitByte(0xE8 | (registerNumber & 0b111));
+    emitUnsigned32(static_cast<std::uint32_t>(value));
+}
+
 std::size_t Emitter::addString(const std::string &text) {
     const std::size_t offset = data.size();
     for (const char character : text) {
@@ -133,6 +141,15 @@ std::size_t Emitter::addString(const std::string &text) {
     }
     data.push_back(0);
     return offset;
+}
+
+void Emitter::emitPrologue() {
+    emitMoveRegister(PhysicalRegister::Rbp, PhysicalRegister::Rsp);
+}
+
+std::int32_t Emitter::reserveStackVariable(const std::size_t byteCount) {
+    stackSize += byteCount;
+    return static_cast<std::int32_t>(stackSize);
 }
 
 std::vector<std::uint8_t> Emitter::finish() const {

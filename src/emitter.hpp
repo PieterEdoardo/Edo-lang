@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <unordered_map>
 #include <vector>
 
 #include "ast.hpp"
@@ -19,6 +20,14 @@ public:
     std::vector<std::uint8_t> bytes;
     std::vector<std::uint8_t> data;
     std::vector<DataFixup> fixups;
+    std::vector<std::uint8_t> rodata;
+    std::vector<DataFixup> rodataFixups;
+
+    std::unordered_map<std::string, std::int32_t> stackVariables;
+    std::size_t stackSize = 0;
+
+    std::size_t addString(const std::string& text);
+    std::int32_t reserveStackVariable(std::size_t byteCount);
 
     void emitByte(uint8_t value);
     void emitUnsigned32(std::uint32_t value);
@@ -27,7 +36,8 @@ public:
     void emitStatement(const Statement& statement);
     void emitSyscall();
     void emitLoadAddress(PhysicalRegister destination, std::size_t dataOffset);
+    void emitSubtractImmediate(PhysicalRegister destination, std::int32_t value);
 
-    std::size_t addString(const std::string& text);
+    void emitPrologue();
     std::vector<std::uint8_t> finish() const;
 };

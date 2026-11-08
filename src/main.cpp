@@ -39,7 +39,9 @@ int main(const int argumentCount, char** argumentValues) {
     Lexer lexer(sourcecode);
     const std::vector<Token> tokens = lexer.tokenize();
     Parser parser(tokens);
-        Emitter emitter;
+
+    Emitter emitter;
+    emitter.emitPrologue();
 
     try {
         while (!parser.isAtEnd()) {
