@@ -48,7 +48,6 @@ namespace {
             return;
         }
 
-        // strtbl
         if (const auto* text = std::get_if<StringExpression>(assignment.value.get())) {
             const std::size_t dataOffset = emitter.addString(text->value);
             emitter.emitLoadAddress(*destination, dataOffset);
@@ -76,6 +75,27 @@ void Emitter::emitStatement(const Statement& statement) {
 
     if (const auto* assignment = std::get_if<AssignmentStatement>(&statement)) {
         emitAssignment(*this, *assignment);
+        return;
+    }
+
+    if (const auto* declaration = std::get_if<VariableDeclaration>(&statement)) {
+        std::size_t elementCount = 1;
+        if (declaration->arraySize) {
+            const auto* sizeNumber = std::get_if<NumberExpression>(declaration->arraySize.get());
+            if (!sizeNumber) {
+                throw std::runtime_error("Array size must be a constant number for now");
+            }
+            elementCount = static_cast<std::size_t>(sizeNumber->value);
+        }
+
+        const std::size_t totalBytes = elementCount * declaration->type.byteSize;
+        const std::int32_t offset = reserveStackVariable(totalBytes);
+        stackVariables[declaration->identifier] = offset;
+        emitSubtractImmediate(PhysicalRegister::Rsp, static_cast<std::int32_t>(totalBytes));
+
+        if (declaration->initializer) {
+            throw std::runtime_error("initialized variable declarations not implemented yet");
+        }
         return;
     }
 
@@ -126,7 +146,7 @@ void Emitter::emitLoadAddress(PhysicalRegister destination, const std::size_t da
     emitUnsigned32(0);
 }
 
-void Emitter::emitSubtractImmediate(PhysicalRegister destination, std::int32_t value) {
+void Emitter::emitSubtractImmediate(PhysicalRegister destination, const std::int32_t value) {
     const auto registerNumber = static_cast<std::uint8_t>(destination);
     emitByte(0x48 | (registerNumber >> 3));
     emitByte(0x81);

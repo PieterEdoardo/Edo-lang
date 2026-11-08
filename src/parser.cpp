@@ -610,7 +610,9 @@ ExpressionPointer Parser::parsePrimary() {
     // Character groups
     if (check(TokenType::String)) {
         advance();
-        return std::make_unique<Expression>(StringExpression{token.lexeme});
+        return std::make_unique<Expression>(StringExpression{
+            .value = token.lexeme
+        });
     }
 
     if (check(TokenType::Number)) {
