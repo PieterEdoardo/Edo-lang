@@ -38,6 +38,9 @@ public:
     void emitLoadAddress(PhysicalRegister destination, std::size_t dataOffset);
     void emitSubtractImmediate(PhysicalRegister destination, std::int32_t value);
 
+    void emitStoreToStack(PhysicalRegister source, std::int32_t offset);
+    void emitLoadFromStack(PhysicalRegister destination, std::int32_t offset);
+
     void emitPrologue();
     std::vector<std::uint8_t> finish() const;
 };

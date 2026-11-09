@@ -202,7 +202,7 @@ TypeDefinition Parser::parseTypeDefinition() {
         .name = typeTarget.lexeme,
         .isPointer = isPointer,
         .isUserDefined = isUserDefined,
-        .byteSize = isUserDefined ? 0 : byteSizeForType(typeTarget.type)
+        .byteSize = isPointer ? 8 : (isUserDefined ? 0 : byteSizeForType(typeTarget.type))
     };
 }
 

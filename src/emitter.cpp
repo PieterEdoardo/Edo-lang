@@ -56,12 +56,15 @@ namespace {
 
         // reg assignment
         if (const auto* sourceIdentifier = std::get_if<IdentifierExpression>(assignment.value.get())) {
-            const std::optional<PhysicalRegister> source = registerFromName(sourceIdentifier->name);
-            if (!source) {
-                throw std::runtime_error("Unknown register: " + sourceIdentifier->name);
+            if (const std::optional<PhysicalRegister> source = registerFromName(sourceIdentifier->name)) {
+                emitter.emitMoveRegister(*destination, *source);
+                return;
             }
-            emitter.emitMoveRegister(*destination, *source);
-            return;
+
+            if (const auto stackFound = emitter.stackVariables.find(sourceIdentifier->name); stackFound != emitter.stackVariables.end()) {
+                emitter.emitLoadFromStack(*destination, stackFound->second);
+                return;
+            }
         }
         throw std::runtime_error("Unsupported assignment");
     }
@@ -92,9 +95,15 @@ void Emitter::emitStatement(const Statement& statement) {
         const std::int32_t offset = reserveStackVariable(totalBytes);
         stackVariables[declaration->identifier] = offset;
         emitSubtractImmediate(PhysicalRegister::Rsp, static_cast<std::int32_t>(totalBytes));
-
-        if (declaration->initializer) {
-            throw std::runtime_error("initialized variable declarations not implemented yet");
+        if (const auto* text = std::get_if<StringExpression>(declaration->initializer.get())) {
+            const std::size_t rodataOffset = addString(text->value);
+            emitLoadAddress(PhysicalRegister::R11, rodataOffset);
+            emitStoreToStack(PhysicalRegister::R11, offset);
+        } else if (const auto* number = std::get_if<NumberExpression>(declaration->initializer.get())) {
+            emitMoveImmediate(PhysicalRegister::R11, number->value);
+            emitStoreToStack(PhysicalRegister::R11, offset);
+        } else if (declaration->initializer) {
+            throw std::runtime_error("unsupported initializer expression for now");
         }
         return;
     }
@@ -152,6 +161,22 @@ void Emitter::emitSubtractImmediate(PhysicalRegister destination, const std::int
     emitByte(0x81);
     emitByte(0xE8 | (registerNumber & 0b111));
     emitUnsigned32(static_cast<std::uint32_t>(value));
+}
+
+void Emitter::emitStoreToStack(PhysicalRegister source, std::int32_t offset) {
+    const auto sourceNumber = static_cast<std::uint8_t>(source);
+    emitByte(0x48 | ((sourceNumber >> 3) << 2));
+    emitByte(0x89);
+    emitByte(0x80 | ((sourceNumber & 0b111) << 3) | 0b101);
+    emitUnsigned32(static_cast<std::uint32_t>(-offset));
+}
+
+void Emitter::emitLoadFromStack(PhysicalRegister destination, std::int32_t offset) {
+    const auto destinationNumber = static_cast<std::uint8_t>(destination);
+    emitByte(0x48 | ((destinationNumber >> 3) << 2));
+    emitByte(0x8B);
+    emitByte(0x80 | ((destinationNumber & 0b111) << 3) | 0b101);
+    emitUnsigned32(static_cast<std::uint32_t>(-offset));
 }
 
 std::size_t Emitter::addString(const std::string &text) {
