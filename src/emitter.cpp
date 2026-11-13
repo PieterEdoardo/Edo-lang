@@ -62,7 +62,11 @@ namespace {
             }
 
             if (const auto stackFound = emitter.stackVariables.find(sourceIdentifier->name); stackFound != emitter.stackVariables.end()) {
-                emitter.emitLoadFromStack(*destination, stackFound->second);
+                if (stackFound->second.isArray) {
+                    emitter.emitLoadStackAddress(*destination, stackFound->second.offset);
+                } else {
+                    emitter.emitLoadFromStack(*destination, stackFound->second.offset);
+                }
                 return;
             }
         }
@@ -93,7 +97,8 @@ void Emitter::emitStatement(const Statement& statement) {
 
         const std::size_t totalBytes = elementCount * declaration->type.byteSize;
         const std::int32_t offset = reserveStackVariable(totalBytes);
-        stackVariables[declaration->identifier] = offset;
+        const bool isArray = declaration->arraySize != nullptr;
+        stackVariables[declaration->identifier] = StackVariable{.offset = offset, .isArray = isArray};
         emitSubtractImmediate(PhysicalRegister::Rsp, static_cast<std::int32_t>(totalBytes));
         if (const auto* text = std::get_if<StringExpression>(declaration->initializer.get())) {
             const std::size_t rodataOffset = addString(text->value);
@@ -175,6 +180,14 @@ void Emitter::emitLoadFromStack(PhysicalRegister destination, std::int32_t offse
     const auto destinationNumber = static_cast<std::uint8_t>(destination);
     emitByte(0x48 | ((destinationNumber >> 3) << 2));
     emitByte(0x8B);
+    emitByte(0x80 | ((destinationNumber & 0b111) << 3) | 0b101);
+    emitUnsigned32(static_cast<std::uint32_t>(-offset));
+}
+
+void Emitter::emitLoadStackAddress(PhysicalRegister destination, std::int32_t offset) {
+    const auto destinationNumber = static_cast<std::uint8_t>(destination);
+    emitByte(0x48 | ((destinationNumber >> 3) << 2));
+    emitByte(0x8D);
     emitByte(0x80 | ((destinationNumber & 0b111) << 3) | 0b101);
     emitUnsigned32(static_cast<std::uint32_t>(-offset));
 }

@@ -15,15 +15,19 @@ struct DataFixup {
     std::size_t dataOffset;
 };
 
+struct StackVariable {
+    std::int32_t offset;
+    bool isArray;
+};
+
 class Emitter {
 public:
     std::vector<std::uint8_t> bytes;
     std::vector<std::uint8_t> data;
     std::vector<DataFixup> fixups;
-    std::vector<std::uint8_t> rodata;
-    std::vector<DataFixup> rodataFixups;
 
-    std::unordered_map<std::string, std::int32_t> stackVariables;
+    std::unordered_map<std::string, StackVariable> stackVariables;
+
     std::size_t stackSize = 0;
 
     std::size_t addString(const std::string& text);
@@ -40,6 +44,7 @@ public:
 
     void emitStoreToStack(PhysicalRegister source, std::int32_t offset);
     void emitLoadFromStack(PhysicalRegister destination, std::int32_t offset);
+    void emitLoadStackAddress(PhysicalRegister destination, std::int32_t offset);
 
     void emitPrologue();
     std::vector<std::uint8_t> finish() const;
