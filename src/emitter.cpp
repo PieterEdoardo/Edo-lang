@@ -72,6 +72,59 @@ namespace {
         }
         throw std::runtime_error("Unsupported assignment");
     }
+
+    void generateExpression(Emitter& emitter, const Expression& expression, const PhysicalRegister destination) {
+        if (const auto* number = std::get_if<NumberExpression>(&expression)) {
+            emitter.emitMoveImmediate(destination, number->value);
+            return;
+        }
+
+        if (const auto* text = std::get_if<StringExpression>(&expression)) {
+            const std::size_t dataOffset = emitter.addString(text->value);
+            emitter.emitLoadAddress(destination, dataOffset);
+            return;
+        }
+
+        if (const auto* identifier = std::get_if<IdentifierExpression>(&expression)) {
+            if (const std::optional<PhysicalRegister> source = registerFromName(identifier->name)) {
+                if (*source != destination) {
+                    emitter.emitMoveRegister(destination, *source);
+                }
+                return;
+            }
+
+            const auto stackFound = emitter.stackVariables.find(identifier->name);
+            if (stackFound != emitter.stackVariables.end()) {
+                if (stackFound->second.isArray) {
+                    emitter.emitLoadStackAddress(destination, stackFound->second.offset);
+                } else {
+                    emitter.emitLoadFromStack(destination, stackFound->second.offset);
+                }
+                return;
+            }
+
+            throw std::runtime_error("Unknown identifier: " + identifier->name);
+        }
+
+        if (const auto* binary = std::get_if<BinaryExpression>(&expression)) {
+            constexpr auto primaryScratch = PhysicalRegister::R11;
+            const PhysicalRegister rightOperandRegister = (destination == primaryScratch) ? PhysicalRegister::R10 : primaryScratch;
+
+            generateExpression(emitter, *binary->right, rightOperandRegister);
+
+            emitter.emitPop(rightOperandRegister);
+
+            if (binary->operatorSymbol == "+") {
+                emitter.emitAddRegisters(destination, rightOperandRegister);
+            } else if (binary->operatorSymbol == "-") {
+                emitter.emitSubtractRegisters(destination, rightOperandRegister);
+            } else {
+                throw std::runtime_error("Operator not implemented yet: " + binary->operatorSymbol);
+            }
+            return;
+        }
+        throw std::runtime_error("Unsupported expression for now.");
+    }
 }
 
 void Emitter::emitStatement(const Statement& statement) {
@@ -168,7 +221,39 @@ void Emitter::emitSubtractImmediate(PhysicalRegister destination, const std::int
     emitUnsigned32(static_cast<std::uint32_t>(value));
 }
 
-void Emitter::emitStoreToStack(PhysicalRegister source, std::int32_t offset) {
+void Emitter::emitPush(PhysicalRegister source) {
+    const auto registerNumber = static_cast<std::uint8_t>(source);
+    if (registerNumber >= 8) {
+        emitByte(0x41);
+    }
+    emitByte(0x50 | (registerNumber & 0b111));
+}
+
+void Emitter::emitPop(PhysicalRegister destination) {
+    const auto registerNumber = static_cast<std::uint8_t>(destination);
+    if (registerNumber >= 8) {
+        emitByte(0x41);
+    }
+    emitByte(0x58 | (registerNumber & 0b111));
+}
+
+void Emitter::emitAddRegisters(PhysicalRegister destination, PhysicalRegister source) {
+    const auto destinationNumber = static_cast<std::uint8_t>(destination);
+    const auto sourceNumber = static_cast<std::uint8_t>(source);
+    emitByte(0x48 | ((destinationNumber >> 3) << 2) | (destinationNumber >> 3));
+    emitByte(0x01);
+    emitByte(0xC0 | ((sourceNumber & 0b111) << 3) | (destinationNumber & 0b111));
+}
+
+void Emitter::emitSubtractRegisters(PhysicalRegister destination, PhysicalRegister source) {
+    const auto destinationNumber = static_cast<std::uint8_t>(destination);
+    const auto sourceNumber = static_cast<std::uint8_t>(source);
+    emitByte(0x48 | ((destinationNumber >> 3) << 2) | (destinationNumber >> 3));
+    emitByte(0x29);
+    emitByte(0xC0 | ((sourceNumber & 0b111) << 3) | (destinationNumber & 0b111));
+}
+
+void Emitter::emitStoreToStack(PhysicalRegister source, const std::int32_t offset) {
     const auto sourceNumber = static_cast<std::uint8_t>(source);
     emitByte(0x48 | ((sourceNumber >> 3) << 2));
     emitByte(0x89);
@@ -176,7 +261,7 @@ void Emitter::emitStoreToStack(PhysicalRegister source, std::int32_t offset) {
     emitUnsigned32(static_cast<std::uint32_t>(-offset));
 }
 
-void Emitter::emitLoadFromStack(PhysicalRegister destination, std::int32_t offset) {
+void Emitter::emitLoadFromStack(PhysicalRegister destination, const std::int32_t offset) {
     const auto destinationNumber = static_cast<std::uint8_t>(destination);
     emitByte(0x48 | ((destinationNumber >> 3) << 2));
     emitByte(0x8B);
@@ -184,7 +269,7 @@ void Emitter::emitLoadFromStack(PhysicalRegister destination, std::int32_t offse
     emitUnsigned32(static_cast<std::uint32_t>(-offset));
 }
 
-void Emitter::emitLoadStackAddress(PhysicalRegister destination, std::int32_t offset) {
+void Emitter::emitLoadStackAddress(PhysicalRegister destination, const std::int32_t offset) {
     const auto destinationNumber = static_cast<std::uint8_t>(destination);
     emitByte(0x48 | ((destinationNumber >> 3) << 2));
     emitByte(0x8D);
@@ -226,4 +311,6 @@ std::vector<std::uint8_t> Emitter::finish() const {
     image.insert(image.end(), data.begin(), data.end());
     return image;
 }
+
+
 

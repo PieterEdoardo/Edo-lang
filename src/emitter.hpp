@@ -41,6 +41,10 @@ public:
     void emitSyscall();
     void emitLoadAddress(PhysicalRegister destination, std::size_t dataOffset);
     void emitSubtractImmediate(PhysicalRegister destination, std::int32_t value);
+    void emitPush(PhysicalRegister source);
+    void emitPop(PhysicalRegister destination);
+    void emitAddRegisters(PhysicalRegister destination, PhysicalRegister source);
+    void emitSubtractRegisters(PhysicalRegister destination, PhysicalRegister source);
 
     void emitStoreToStack(PhysicalRegister source, std::int32_t offset);
     void emitLoadFromStack(PhysicalRegister destination, std::int32_t offset);
