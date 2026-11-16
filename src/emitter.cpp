@@ -31,48 +31,6 @@ namespace {
         return found->second;
     }
 
-    void emitAssignment(Emitter& emitter, const AssignmentStatement& assignment) {
-        const auto* target = std::get_if<IdentifierExpression>(assignment.target.get());
-        if (!target) {
-            throw std::runtime_error("assignment target must be a plain identifier for now");
-        }
-
-        const std::optional<PhysicalRegister> destination = registerFromName(target->name);
-        if (!destination) {
-            throw std::runtime_error("Unknown register: " + target->name);
-        }
-
-        // imm assignment
-        if (const auto* number = std::get_if<NumberExpression>(assignment.value.get())) {
-            emitter.emitMoveImmediate(*destination, number->value);
-            return;
-        }
-
-        if (const auto* text = std::get_if<StringExpression>(assignment.value.get())) {
-            const std::size_t dataOffset = emitter.addString(text->value);
-            emitter.emitLoadAddress(*destination, dataOffset);
-            return;
-        }
-
-        // reg assignment
-        if (const auto* sourceIdentifier = std::get_if<IdentifierExpression>(assignment.value.get())) {
-            if (const std::optional<PhysicalRegister> source = registerFromName(sourceIdentifier->name)) {
-                emitter.emitMoveRegister(*destination, *source);
-                return;
-            }
-
-            if (const auto stackFound = emitter.stackVariables.find(sourceIdentifier->name); stackFound != emitter.stackVariables.end()) {
-                if (stackFound->second.isArray) {
-                    emitter.emitLoadStackAddress(*destination, stackFound->second.offset);
-                } else {
-                    emitter.emitLoadFromStack(*destination, stackFound->second.offset);
-                }
-                return;
-            }
-        }
-        throw std::runtime_error("Unsupported assignment");
-    }
-
     void generateExpression(Emitter& emitter, const Expression& expression, const PhysicalRegister destination) {
         if (const auto* number = std::get_if<NumberExpression>(&expression)) {
             emitter.emitMoveImmediate(destination, number->value);
@@ -125,6 +83,21 @@ namespace {
         }
         throw std::runtime_error("Unsupported expression for now.");
     }
+
+    void emitAssignment(Emitter& emitter, const AssignmentStatement& assignment) {
+        const auto* target = std::get_if<IdentifierExpression>(assignment.target.get());
+        if (!target) {
+            throw std::runtime_error("assignment target must be a plain identifier for now");
+        }
+
+        const std::optional<PhysicalRegister> destination = registerFromName(target->name);
+        if (!destination) {
+            throw std::runtime_error("Unknown register: " + target->name);
+        }
+
+        generateExpression(emitter, *assignment.value, *destination);
+    }
+
 }
 
 void Emitter::emitStatement(const Statement& statement) {
@@ -153,15 +126,10 @@ void Emitter::emitStatement(const Statement& statement) {
         const bool isArray = declaration->arraySize != nullptr;
         stackVariables[declaration->identifier] = StackVariable{.offset = offset, .isArray = isArray};
         emitSubtractImmediate(PhysicalRegister::Rsp, static_cast<std::int32_t>(totalBytes));
-        if (const auto* text = std::get_if<StringExpression>(declaration->initializer.get())) {
-            const std::size_t rodataOffset = addString(text->value);
-            emitLoadAddress(PhysicalRegister::R11, rodataOffset);
+
+        if (declaration->initializer) {
+            generateExpression(*this, *declaration->initializer, PhysicalRegister::R11);
             emitStoreToStack(PhysicalRegister::R11, offset);
-        } else if (const auto* number = std::get_if<NumberExpression>(declaration->initializer.get())) {
-            emitMoveImmediate(PhysicalRegister::R11, number->value);
-            emitStoreToStack(PhysicalRegister::R11, offset);
-        } else if (declaration->initializer) {
-            throw std::runtime_error("unsupported initializer expression for now");
         }
         return;
     }

@@ -1,0 +1,6 @@
+int a = 7;
+int b = 4;
+int c = 5;
+rax = 60;
+rdi = a + c;
+syscall;
