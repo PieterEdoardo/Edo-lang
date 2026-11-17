@@ -69,6 +69,9 @@ namespace {
             const PhysicalRegister rightOperandRegister = (destination == primaryScratch) ? PhysicalRegister::R10 : primaryScratch;
 
             generateExpression(emitter, *binary->right, rightOperandRegister);
+            emitter.emitPush(rightOperandRegister);
+
+            generateExpression(emitter, *binary->left, destination);
 
             emitter.emitPop(rightOperandRegister);
 
@@ -208,7 +211,7 @@ void Emitter::emitPop(PhysicalRegister destination) {
 void Emitter::emitAddRegisters(PhysicalRegister destination, PhysicalRegister source) {
     const auto destinationNumber = static_cast<std::uint8_t>(destination);
     const auto sourceNumber = static_cast<std::uint8_t>(source);
-    emitByte(0x48 | ((destinationNumber >> 3) << 2) | (destinationNumber >> 3));
+    emitByte(0x48 | ((sourceNumber >> 3) << 2) | (destinationNumber >> 3));
     emitByte(0x01);
     emitByte(0xC0 | ((sourceNumber & 0b111) << 3) | (destinationNumber & 0b111));
 }
@@ -216,7 +219,7 @@ void Emitter::emitAddRegisters(PhysicalRegister destination, PhysicalRegister so
 void Emitter::emitSubtractRegisters(PhysicalRegister destination, PhysicalRegister source) {
     const auto destinationNumber = static_cast<std::uint8_t>(destination);
     const auto sourceNumber = static_cast<std::uint8_t>(source);
-    emitByte(0x48 | ((destinationNumber >> 3) << 2) | (destinationNumber >> 3));
+    emitByte(0x48 | ((sourceNumber >> 3) << 2) | (destinationNumber >> 3));
     emitByte(0x29);
     emitByte(0xC0 | ((sourceNumber & 0b111) << 3) | (destinationNumber & 0b111));
 }
